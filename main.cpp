@@ -86,72 +86,34 @@ void testIncComponent(){
 
 
 
-void graphStastic(ProbGraph pg){
+void graphStastic(void){
     
-    //pg.certainGraphStatstic();
-//    pg.reliablityReport();
+    delimiter='\t';
+    uncertain=true;
+    ProbGraph pg=init_from_File("/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt");
     igraph_vector_t entropyReport;
-    igraph_vector_init(&entropyReport, 3);
-    pg.entropyReport(&entropyReport, 2);
+    igraph_vector_init(&entropyReport, 4);
+    pg.entropyReport(&entropyReport,3);
+    
     print_vector(&entropyReport, "entropyReport");
+    pg.uncertainGraphStastic();
 }
 
 
 
 
-void graphTest(ProbGraph pg){
-//    igraph_vector_t deg;
-//    igraph_vector_t probs;
-////    igraph_vector_t entropyReport;
-////    igraph_real_t maxDegree;
-////    
-////    igraph_vector_init(&deg, 0);
-////    pg.maxDegrees(&deg);
-////    print_vector(&deg, "degree");
-////
-//    igraph_vector_init(&probs, 0);
-//    igraph_real_t probs_t[]={0.7,0.9,0.8,0.8,0.1};
-//    igraph_vector_view(&probs,probs_t,5);
-//    print_vector(&probs, "prob sequence");
-//    
-//    pg.set_edges_prob(&probs);
-//    
-//    pg.uncertainGraphStastic();
+void graphTest(void){
     
-//
-//    maxDegree=pg.maxDegree();
-//    
-//    igraph_vector_init(&entropyReport, maxDegree+1);
-//    
-//    pg.entropyReport(&entropyReport);
-//    
-//    print_vector(&entropyReport, "entropy Report");
+    string real_path="/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/dblp.txt";
     
-   
-//    igraph_vector_destroy(&deg);
-//    igraph_vector_destroy(&probs);
-//    igraph_vector_destroy(&entropyReport);
+    delimiter=' ';
+    uncertain=false;
+    ProbGraph pg=init_from_File(real_path);
+    //pg.certainGraphStatstic();
+    igraph_real_t eps_result;
     
+    ProbGraph tpg=pg.generateObfuscation(0.011, &eps_result);
     
-    
-//    printf("selfTest epislon: %f \n",pg.selfTest());
-    
-    
-//   
-//    igraph_real_t epislon_t;
-////////
-////////    pg.certainGraphStatstic();
-////////
-////////    
-//    ProbGraph tpg=pg.generateObfuscation(0.002, &epislon_t);
-//////
-//    printf("epislon:%f \n",epislon_t);
-//    pg.selfTest();
-
-   
-    
-    
-//    tpg.uncertainGraphStastic();
     
 }
 
@@ -182,13 +144,13 @@ void compare_test(string dataset, string inputDir, string repDir, string obDir, 
 //    igraph_vector_init(&rep_rel,cnv);
     
 //    rep_pg.certain_reliablityReport_ex_store(&rep_rel, relOutput, "reppg");
-    
-    ProbGraph out_pg=init_from_File(obOutPath);
-    cout<<"ob_pg"<<endl;
-    out_pg.uncertainGraphStastic();
-    igraph_vector_t ob_rel;
-    igraph_vector_init(&ob_rel,824774);
-    out_pg.uncertain_reliablityReport_ex_store(&ob_rel, relOutput, dataset+"outpg");
+//    
+//    ProbGraph out_pg=init_from_File(obOutPath);
+//    cout<<"ob_pg"<<endl;
+//    out_pg.uncertainGraphStastic();
+//    igraph_vector_t ob_rel;
+//    igraph_vector_init(&ob_rel,824774);
+//    out_pg.uncertain_reliablityReport_ex_store(&ob_rel, relOutput, dataset+"outpg");
     
     
     
@@ -278,23 +240,26 @@ int main(int argc, const char * argv[]) {
     noise=0.01;
     delimiter='\t';
     uncertain=true;
-    sampleNum=50;
+    sampleNum=100;
     
     
 //
     igraph_i_set_attribute_table(&igraph_cattribute_table); // enable attribute handling
     string ex_path="/Users/dongqingxiao/pythonEx/probGraph/exampleGraph.txt";
     string ex_un_path="/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt";
-    string real_path="/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/dblp.txt";
+    
     string ex_inc_path="/Users/dongqingxiao/pythonEx/probGraph/exampleGraph_test.txt";
     
    //final_Test("GREEDY1-1_dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput");
    // final_Test("dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/","/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/");
- compare_test("dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output",
-         "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput","GREEDY1-","1");
+// compare_test("dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output",
+//         "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput","GREEDY1-","1");
     
     
    // testIncComponent();
+    
+    graphTest();
+    //graphStastic();
     
     return 0;
 }

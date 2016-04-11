@@ -43,7 +43,6 @@ void ProbGraph::set_edges(const igraph_vector_t *edges){
     igraph_add_edges(&graph, edges, 0);
     ne=igraph_vector_size(edges);
     ne/=2;
-    printf("set_edge the number of edge:%li\n",ne);
 }
 
 void ProbGraph::set_edges_prob(const igraph_vector_t *probs){
@@ -218,9 +217,9 @@ void ProbGraph::uncertain_entropyReport(igraph_vector_t * entropyReport,igraph_r
             igraph_vector_set(&s,0,1+VECTOR(res_v)[0]);
         }
         
-        if(i%10000==0){
-            cout<<"at least move"<<i<<endl;
-        }
+//        if(i%10000==0){
+//            cout<<"at least move"<<i<<endl;
+//        }
    
 
         igraph_vector_destroy(&prob_v);
@@ -339,7 +338,7 @@ igraph_real_t ProbGraph::testAgainst(igraph_vector_t * ak){
     for(long int i=0;i<nv;i++){
         igraph_real_t val=VECTOR(*ak)[i];
         double diff=theshold-VECTOR(ePResult)[(long int) val];
-        if(diff>0){
+        if(diff>0.01){
             eResult+=1;
             printf("less deg=%f, diff=%f \n",val, diff);
         }
@@ -479,7 +478,7 @@ ProbGraph ProbGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * ep
     printf("finish the computation \n");
 
     
-
+    
     int skip_count=(int) lround(epsilon*nv/2)+1;
 
 
@@ -498,21 +497,10 @@ ProbGraph ProbGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * ep
         lowNodes[pos]=0;
     }
     
-
-//    cout<<"last one "<< nodeUNs[nv-1]<<endl;
-//    cout<<"last one "<< nodeUNs[nv-10]<<endl;
-  
-    
-    
-    
-
-    
-    
     discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
     uniform_real_distribution<double> unDist(0.0,1.0);
-
-//    default_random_engine generator;
-    default_random_engine sgen;
+    uniform_real_distribution<double> unGenDist(0.0,1.0);
+    default_random_engine sgen; // random engine
 
     
     
@@ -664,8 +652,12 @@ ProbGraph ProbGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * ep
         igraph_vector_scale(&ue,1.0/ueSum);
         
         int seed=1246789091;
-        
+        int unCount=0;
+        double reSum=0;
         printf("start inject uncertainty \n");
+        
+        // add one random shuffle to help
+        
         
         for(long int i=0;i<ce;i++){
             
@@ -677,9 +669,11 @@ ProbGraph ProbGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * ep
             igraph_real_t re=0;
             
             if(w<noise){
-                re=unDist(sgen);
+                re=unGenDist(sgen);
+                unCount+=1;
             }else{
                 re=truncated_normal_ab_sample(0.0, sqrt((double) sigma_e), 0.0, 1.0, seed);
+               // re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
             }
             
             long int from=VECTOR(EC)[2*i];
@@ -705,14 +699,17 @@ ProbGraph ProbGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * ep
                 igraph_vector_set(&pe, i, re);
             }
             //
-            ueSum+=re;
+            reSum+=re;
         }
         
         printf("finish inject uncertainty \n");
         
-        printf("inject uncertainty %f \n", ueSum/ce);
-//        printf("inject uncertainty over white noise %f \n", unCount/ce);
+        printf("inject uncertainty %f \n", reSum/ce);
+        
+        printf("inject uncertainty over white noise %f \n", (double)unCount/ce);
+        
         printf("sum of edge :%f \n", igraph_vector_sum(&pe));
+        
         printf("average of sigme %f \n",sigma_Sum/ce);
         
         ProbGraph pGraph((igraph_integer_t)nv);
@@ -829,7 +826,7 @@ void ProbGraph::certainGraphStatstic(void){
     igraph_vector_t degrees;
     igraph_real_t nne,ad,md;
     
-    igraph_vector_init(&degrees, 0);
+    igraph_vector_init(&degrees, nv);
     
 
     igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL, true);
@@ -850,102 +847,80 @@ void ProbGraph::certainGraphStatstic(void){
     printf("the number of vertice: %li \n",nv);
     printf("NE\tAD\tMD\n");
     printf("%2f\t%2f\t%2f\n", nne,ad,md);
+    
+    igraph_vector_destroy(&degrees);
 
+}
+/** 
+ * AD: maximal degree of certain graph 
+ *
+ */
+void ProbGraph::certain_metrics(igraph_vector_t * res, igraph_real_t p){
+    igraph_vector_t degrees;
+    igraph_real_t md;
+    igraph_vector_init(&degrees, nv);
+    igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL, true);
+    md=igraph_vector_max(&degrees);
+    // set the maximal degree value;
+    igraph_vector_set(res,0,VECTOR(*res)[0]+md*p);
+    igraph_vector_destroy(&degrees);
 }
 
 
 void ProbGraph::uncertainGraphStastic(void){
+    igraph_vector_t  expected_Degree,edge_probs, eids;
+    igraph_vector_t sampleRes;
     
-    
-    igraph_vector_t  expected_Degree;
-    igraph_vector_t  max_Degrees;
-    igraph_vector_t edge_probs;
-    igraph_vector_t eids;
-    
-
     igraph_real_t nne,ad,md,epMean;
     
-    igraph_vector_init(&max_Degrees, nv);
     igraph_vector_init(&expected_Degree,nv);
     igraph_vector_init(&edge_probs,ne);
     igraph_vector_init(&eids,2*ne);
+    igraph_vector_init(&sampleRes,3); // this case we only cal AD and ..
     
     
-    maxDegrees(&max_Degrees);
-    
-    
-    
-    md=igraph_vector_max(&max_Degrees);
     EANV(&graph,"prob",&edge_probs);
-    
     igraph_get_edgelist(&graph, &eids, false);
 
-    
-    
     printf("call uncertain Graph statstic \n");
     
     for(long int i=0;i<ne;i++){
         long int from=VECTOR(eids)[2*i];
         long int to=VECTOR(eids)[2*i+1];
-        
         igraph_real_t p=VECTOR(edge_probs)[i];
-        // real 
         igraph_vector_set(&expected_Degree, from,VECTOR(expected_Degree)[from]+p);
         igraph_vector_set(&expected_Degree, to,VECTOR(expected_Degree)[to]+p);
     }
-    
-    
-    
-//    for(long int i=0;i<nv;i++){
-//        igraph_real_t v_exp;
-//        igraph_vector_t ieids;
-//        v_exp=0;
-//        long int v_deg=VECTOR(max_Degrees)[i];
-//        
-//        igraph_vector_init(&ieids,nv);
-//        igraph_incident(&graph, &ieids, (igraph_real_t)i, IGRAPH_ALL);
-//        
-//       
-//        
-//        
-//        for(long int j=0;j<v_deg;j++){
-//            long int eid=VECTOR(ieids)[j];
-//            
-//            v_exp+=VECTOR(edge_probs)[eid];
-//        }
-//        
-//        
-//        
-//        igraph_vector_set(&expected_Degree,i, v_exp);
-//        
-//        igraph_vector_destroy(&ieids);
-//    }
-    
-//    printf("end Call uncertain Graph statstic \n");
     
     nne=igraph_vector_sum(&expected_Degree);
     nne/=2;
     
     ad=2*nne/nv;
-    md=igraph_vector_max(&expected_Degree);
+
     
     epMean=igraph_vector_sum(&edge_probs)/igraph_vector_size(&edge_probs);
+
     
-   
+    double p=1.0/sampleNum;
+    
+    for(int i=0;i<sampleNum;i++){
+        ProbGraph sg=sampleGraph();
+        sg.certain_metrics(&sampleRes, p);
+    }
+    
+    md=VECTOR(sampleRes)[0];
+    
     printf("uncentrain stastic \n");
     printf("nv:%ld \n",nv);
     printf("edge probability(mean): %2f \n", epMean);
     printf("NE\tAD\tMD\n");
     printf("%2f\t%2f\t%2f\n", nne,ad,md);
-    
-    
-//    printf("the one with max expected degree is :%li \n", igraph_vector_which_max(&expected_Degree));
-    
 
     
     igraph_vector_destroy(&expected_Degree);
-    igraph_vector_destroy(&max_Degrees);
     igraph_vector_destroy(&edge_probs);
+    igraph_vector_destroy(&eids);
+    igraph_vector_destroy(&sampleRes);
     
     
 }
@@ -1050,7 +1025,7 @@ ProbGraph uncertain_init_from_File(string path){
     igraph_vector_t v_graph,e_probs;
     vector<double> edge_prob;
 
-    cout<<"opne file:"<<path<<endl;
+    cout<<"openfile:"<<path<<endl;
     cout<<"delimiter:"<<delimiter<<endl;
     
     
@@ -1071,11 +1046,14 @@ ProbGraph uncertain_init_from_File(string path){
         
         
         graphFile.close();
+    }else{
+        cout<<"can't open file"<<endl;
     }
     
     double * array=v.data();
     igraph_vector_view(&v_graph, array, v.size());
     igraph_real_t nv=igraph_vector_max(&v_graph);
+    
     ProbGraph pg(nv+1);
     pg.set_edges(&v_graph);
     
@@ -1695,8 +1673,7 @@ ProbGraph ProbGraph::sampleGraph(void){
     igraph_vector_t edges, edgeProbs,sEdges;
     vector<double> sampleEdges;
     random_device rand_dev;
-    mt19937                        generator(rand_dev());
-//    default_random_engine sgen;
+    mt19937     generator(rand_dev());
     uniform_real_distribution<double> unDist(0.0,1.0);
     
     igraph_vector_init(&edges, 2*ne);
@@ -1708,8 +1685,9 @@ ProbGraph ProbGraph::sampleGraph(void){
         vIDs.push_back(i);
     }
     
+    
     random_shuffle(vIDs.begin(), vIDs.end());
-
+    
     for(int j=0;j<ne;j++){
         
         int i=vIDs[j];
@@ -1717,7 +1695,7 @@ ProbGraph ProbGraph::sampleGraph(void){
         
         float x=unDist(generator);
     
-        if(e_prob>x){
+        if(e_prob>=x){
             sampleEdges.push_back(VECTOR(edges)[2*i]);
             sampleEdges.push_back(VECTOR(edges)[2*i+1]);
         }

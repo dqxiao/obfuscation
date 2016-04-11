@@ -37,7 +37,7 @@ public:
     ProbGraph(const ProbGraph & obj); // copy constuctor 
     ~ProbGraph(){
         printf("die\n");
-        //igraph_destroy(&graph);
+        igraph_destroy(&graph);
     };
     
     long int getNV(void);
@@ -52,6 +52,7 @@ public:
     ProbGraph obfuscation(void);
     void certainGraphStatstic(void);
     void uncertainGraphStastic(void);
+    void certain_metrics(igraph_vector_t * res, igraph_real_t p);
     
     // suitable for small dataset later switch back to matrix
     void uncertain_reliablityReport(igraph_spmatrix_t *res);
