@@ -133,6 +133,29 @@ double cal_distance_vector(igraph_vector_t * one, igraph_vector_t * second){
     return dis_sum;
 }
 
+double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test){
+    
+    double dis_sum=0;
+    
+    long int refLen=igraph_vector_size(ref);
+    long int testLen=igraph_vector_size(test);
+    
+    if(refLen!=testLen){
+        throw std::exception();
+    }
+    
+    for(long int i=0;i<refLen;i++){
+        double mean_error=std::abs((double)VECTOR(*ref)[i]-(double)VECTOR(*test)[i]);
+        mean_error/=refLen;
+        dis_sum+=mean_error;
+    }
+    
+    dis_sum/=refLen;
+    
+    return dis_sum;
+}
+
+
 double cal_relative_error_vector(igraph_vector_t * one, igraph_vector_t * second){
     double dis_sum=cal_distance_vector(one, second);
     

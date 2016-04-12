@@ -27,5 +27,6 @@ double cal_distance_vector(igraph_vector_t * one, igraph_vector_t * second);
  * second: test
  */
 double cal_relative_error_vector(igraph_vector_t * one, igraph_vector_t * second);
+double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test);
 
 #endif /* DDCal_hpp */

@@ -61,4 +61,20 @@ class Node_UN{
 
 };
 
+
+class NodeRep{
+public:
+    long int nodeID;
+    long int repID;
+    NodeRep(long int id, long int rep): nodeID(id),repID(rep){};
+    
+    bool operator <(const NodeRep & other) const {
+        if(repID<other.repID){return true;}
+        if(repID==other.repID){
+            return nodeID<other.nodeID;
+        }
+        return false;
+    };
+};
+
 #endif /* Help_hpp */

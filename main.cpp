@@ -7,13 +7,10 @@
 //
 
 #include <iostream>
-#include <igraph.h>
-#include <Help.hpp>
-#include <ProbGraph.hpp>
-#include <DDCal.hpp>
-#include <time.h>
-#include <random>
+#include <Graph.hpp>
+#include <UncertainGraph.hpp>
 #include <map>
+#include <DDCal.hpp>
 using namespace std;
 //using boost::math::normal;
 
@@ -23,243 +20,75 @@ int attempt;
 double epsilon;
 double noise;
 char delimiter;
-bool uncertain;
 int sampleNum;
 
-
-//void remalloc_test(){
-//    
-////    igraph_vector_t probs;
-////    igraph_real_t probs_t[]={0.7,0.9,0.8,0.8,0.1};
-////    igraph_vector_init(&probs,5);
-////    
-//////    igraph_vector_view(&probs,probs_t,5);
-////    print_vector(&probs, "prob sequence");
-////    
-////    igraph_vector_destroy(&probs);
-//    
-//    for(int i=0;i<10;i++){
-//        ProbGraph pg(10000000);
-//        
-//        
-//        
-//    }
-//}
-
-void testEntropy(){
-    double result=cal_entropy(0);
-    double result_2=cal_entropy(0.000000001);
-    printf("result:%f, result_2:%lf \n",result,result_2);
-}
-
-void testDiscreteDistribution(){
-    random_device rd;
-    std::mt19937 gen(rd());
-    discrete_distribution<> d({4, 0, 1, 8000});
-    map<int, int> m;
-    for(int n=0; n<10000; ++n) {
-        ++m[d(gen)];
-    }
-    for(auto p : m) {
-        std::cout << p.first << " generated " << p.second << " times\n";
-    }
-}
-
-
-void testIncComponent(){
-    string ex_inc_path="/Users/dongqingxiao/pythonEx/probGraph/exampleGraph_test.txt";
-    uncertain=false;
+void graphCastTest(){
     delimiter='\t';
-    ProbGraph pg=init_from_File(ex_inc_path);
-    long int nv=pg.getNV();
-    igraph_vector_t res;
-    igraph_vector_init(&res,nv);
+    string filepath="/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt";
+    UncertainGraph graph=init_uncertain_from_file(filepath);
+    Graph g(graph);
     
-    pg.certain_reliablityReport_ex_inc(&res, 1);
-    
-    print_vector(&res,"res");
-    
-    
+    g.graphStatstic();
     
 }
 
-
-
-
-void graphStastic(void){
-    
-    delimiter='\t';
-    uncertain=true;
-    ProbGraph pg=init_from_File("/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt");
-    igraph_vector_t entropyReport;
-    igraph_vector_init(&entropyReport, 4);
-    pg.entropyReport(&entropyReport,3);
-    
-    print_vector(&entropyReport, "entropyReport");
-    pg.uncertainGraphStastic();
-}
-
-
-
-
-void graphTest(void){
-    
-    string real_path="/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/dblp.txt";
-    
-    delimiter=' ';
-    uncertain=false;
-    ProbGraph pg=init_from_File(real_path);
-    //pg.certainGraphStatstic();
-    igraph_real_t eps_result;
-    
-    ProbGraph tpg=pg.generateObfuscation(0.011, &eps_result);
-    
-    
-}
-
-void compare_test(string dataset, string inputDir, string repDir, string obDir, string repMethod, string repNum){
-    
-    string infilePath=inputDir+"/"+dataset+".txt";
-    string obInfilePath=repDir+"/"+repMethod+repNum+"_"+dataset+".txt";
-    string obOutPath=obDir+"/"+repMethod+repNum+"_"+dataset+"_ob"+".txt";
-    string relOutputDir="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput";
-    string relOutput=relOutputDir+"/"+dataset;
-    long int nv=824774;
-    
-//    ProbGraph in_pg=init_from_File(infilePath);
-//    long int cnv=in_pg.getNV();
-//    cout<<"in_pg"<<endl;
-//    igraph_vector_t in_rel;
-//    igraph_vector_init(&in_rel,cnv);
-   
-//    in_pg.certainGraphStatstic();
-//    in_pg.uncertainGraphStastic();
-//    in_pg.uncertain_reliablityReport_ex_store(&in_rel, relOutput, "inpg");
-//    
-//    
-//    ProbGraph rep_pg=init_from_Adj_File(obInfilePath);
-//    cout<<"rep_pg"<<endl;
-//    rep_pg.certainGraphStatstic();
-//    igraph_vector_t rep_rel;
-//    igraph_vector_init(&rep_rel,cnv);
-    
-//    rep_pg.certain_reliablityReport_ex_store(&rep_rel, relOutput, "reppg");
-//    
-//    ProbGraph out_pg=init_from_File(obOutPath);
-//    cout<<"ob_pg"<<endl;
-//    out_pg.uncertainGraphStastic();
-//    igraph_vector_t ob_rel;
-//    igraph_vector_init(&ob_rel,824774);
-//    out_pg.uncertain_reliablityReport_ex_store(&ob_rel, relOutput, dataset+"outpg");
-    
-    
-    
-//    igraph_vector_t inRel,repRel,obRel;
-//    
-//    string inRelPath,repRelPath,obRelPath;
-//    
-//    inRelPath=relOutput+"/"+"inpg"+"_rel.txt";
-//    repRelPath=relOutput+"/"+"reppg"+"_rel.txt";
-//    obRelPath=relOutput+"/"+"outpg"+"_rel.txt";
-    
-//    long int nv=824774;
-//    
-//    igraph_vector_init(&inRel, 824774);
-//    igraph_vector_init(&repRel, 824774);
-//    igraph_vector_init(&obRel, 824774);
-//    
-//    
-//    init_vector_from_file(inRelPath, &inRel);
-//    init_vector_from_file(repRelPath, &repRel);
-//    init_vector_from_file(obRelPath, &obRel);
-//    
-//    cout<<"diff between inRel and obRel:"<<endl;
-//    cout<<cal_distance_vector(&inRel, &obRel)<<endl;
-//    
-//    cout<<"diff between inRel and repRel:"<<endl;
-//    cout<<cal_distance_vector(&inRel, &repRel)<<endl;
-//    
-//    cout<<"diff between repRel and obRel:"<<endl;
-//    cout<<cal_distance_vector(&repRel, &obRel)<<endl;
-//   
-//    
-//    cout<<"relative error between inRel and obRel" <<endl;
-//    cout<<cal_relative_error_vector(&inRel, &obRel)<<endl;
-//    cout<<"relative error between inRel and relRel" <<endl;
-//    cout<<cal_relative_error_vector(&inRel, &repRel)<<endl;
-//    cout<<"relative between repRel and obRel:"<<endl;
-//    cout<<cal_relative_error_vector(&repRel, &obRel)<<endl;
-    
-    
-    
-    
-    
-}
-
-
-
-/**
- * for generating obfucation 
- * input: certain graph
- */
-void final_Test(string dataset,string inputDir, string outputDir){
-    
-    string inputpath=inputDir+"/"+dataset+".txt";
-    string outputPath=outputDir+"/"+dataset+"_ob.txt";
-    
-    ProbGraph pg=init_from_Adj_File(inputpath);
-   
-    
-    //ProbGraph pg=init_from_File(inputpath);
-    pg.certainGraphStatstic();
-    pg.selfTest();
-    
-    clock_t t;
-    t=clock();
-    t=clock()-t;
-//    printf ("It clicks (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
-    igraph_real_t eps_res;
-    ProbGraph tpg=pg.generateObfuscation(0.01, &eps_res);
-    printf("final eps_res:%f \n", eps_res);
-    tpg.print_graph(outputPath);
-    
-    
-}
-
-
-
-
-
-int main(int argc, const char * argv[]) {
-    
-    //testProbGraph();
+void graphTest(){
+    // test baisc function about graph class
     k=100;
     c=2;
     attempt=1;
     epsilon=0.0001;
     noise=0.01;
-    delimiter='\t';
-    uncertain=true;
-    sampleNum=100;
+    delimiter=' ';
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/dblp.txt";
+    
+    Graph g=init_from_file(filepath);
+    
+    g.graphStatstic();
+    g.selfTest(100);
+    igraph_real_t eps_res;
+    UncertainGraph tpg=g.generateObfuscation(0.01, &eps_res);
+}
+
+
+void reliablityComparision(){
+    
+    string relfoler="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/";
+    string dataset="DBLP";
+    string input_suffix="_InPG_rel.txt";
+    string rep_suffix="rep_rel.txt";
+    string ob_suffix="outpg_rel.txt";
+    string method="GREEDY1-1";
+    long int nv=824774;
+    
+    igraph_vector_t inRel,repRel,outRel;
+    igraph_vector_init(&inRel,nv);
+    igraph_vector_init(&repRel,nv);
+    igraph_vector_init(&outRel,nv);
     
     
-//
-    igraph_i_set_attribute_table(&igraph_cattribute_table); // enable attribute handling
-    string ex_path="/Users/dongqingxiao/pythonEx/probGraph/exampleGraph.txt";
-    string ex_un_path="/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt";
+    init_vector_file(&inRel, relfoler+dataset+input_suffix);
+    init_vector_file(&repRel, relfoler+method+"_"+rep_suffix);
+    init_vector_file(&outRel, relfoler+method+"_"+ob_suffix);
     
-    string ex_inc_path="/Users/dongqingxiao/pythonEx/probGraph/exampleGraph_test.txt";
+    cout<<"relative error"<<endl;
+    cout<<"inRel vs outRel : "<<cal_relative_error_vector(&inRel,&outRel)<<endl;
     
-   //final_Test("GREEDY1-1_dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput");
-   // final_Test("dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/","/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/");
-// compare_test("dblp","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input","/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output",
-//         "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput","GREEDY1-","1");
+    cout<<"mean error"<<endl;
+    cout<<"inRel vs outRel : "<<cal_mean_error_vector(&inRel, &outRel)<<endl;
     
+    cout<<"mean error"<<endl;
+    cout<<"inRel vs repRel : "<<cal_mean_error_vector(&inRel, &repRel)<<endl;
     
-   // testIncComponent();
+    cout<<"mean error"<<endl;
+    cout<<"repRel vs outRel : "<<cal_mean_error_vector(&repRel, &outRel)<<endl;
     
+
+}
+
+int main(){
     graphTest();
-    //graphStastic();
-    
+    //graphCastTest();
+    //reliablityComparision();
     return 0;
 }
