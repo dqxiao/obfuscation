@@ -117,6 +117,10 @@ void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t
             igraph_vector_set(&s,0,1+VECTOR(res_v)[0]);
         }
         
+        if(i%10000==0){
+            cout<<"move"<<i<<endl;
+        }
+        
         igraph_vector_destroy(&prob_v);
         igraph_vector_destroy(&eids);
         igraph_vector_destroy(&res_v);
@@ -166,6 +170,67 @@ double UncertainGraph::testAgaist(igraph_vector_t *ak){
     igraph_vector_destroy(&ePResult);
     return (double)lessAn/nv;
 }
+
+/**
+ * Basic linear statstic
+ */
+void UncertainGraph::graphStastic(){
+    double edgePSum=igraph_vector_sum(&pe);
+    cout<<"uncertain statstic"<<endl;
+    cout<<"|V|:"<<nv<<endl;
+    cout<<"|E|:"<<ne<<endl;
+    cout<<"|E|/|V|:"<<ne/nv<<endl;
+    cout<<"edge probabiblity (mean):"<<edgePSum/ne<<endl;
+    cout<<"exp degree (mean):"<<edgePSum*2/nv<<endl;
+}
+
+void UncertainGraph::reliablity(igraph_vector_t * res){
+    
+    double p=1.0/sampleNum;
+    
+    for(long int i=0;i<sampleNum;i++){
+        UncertainGraph sg=sampleGraph();
+        Graph g(sg); // cast to certain graph
+        g.reliablity(res, p);
+    }
+    //done
+}
+
+
+void UncertainGraph::reliablity(igraph_vector_t * res, string filepath){
+    reliablity(res);
+    write_vector_file(res, filepath);
+}
+
+void UncertainGraph::getDegrees(bool expected, igraph_vector_t *res){
+    igraph_vector_t degrees;
+    igraph_vector_init(&degrees,nv);
+    if(!expected){
+        igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
+        igraph_vector_copy(res,&degrees);
+    }else{
+        //need to for each node
+        igraph_vector_t edges; // store edge in (u,v)
+        igraph_vector_init(&edges, 2*ne);
+        
+        igraph_get_edgelist(&graph, &edges, false);
+        
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(edges)[2*i];
+            long int to=VECTOR(edges)[2*i+1];
+            double p=VECTOR(pe)[i];
+            igraph_vector_set(&degrees,from, VECTOR(degrees)[from]+p);
+            igraph_vector_set(&degrees,to, VECTOR(degrees)[to]+p);
+        }
+        
+        igraph_vector_copy(res,&degrees);
+    }
+    
+    igraph_vector_destroy(&degrees);
+    
+    
+}
+
 
 UncertainGraph UncertainGraph::sampleGraph(){
     UncertainGraph g(nv);
@@ -303,12 +368,53 @@ UncertainGraph init_uncertain_from_file(string filepath){
     
     pg.set_edges_probs(&e_probs);
     
-    cout<<"init uncertain graph from"<<filepath<<"in edges\t p format"<<endl;
+    cout<<"init uncertain graph from"<<filepath<<"in edges,p format"<<endl;
     
     return pg;
 
 }
 
+UncertainGraph init_uncertain_OB_from_file(string filepath, long nv){
+    ifstream graphFile(filepath);
+    string line;
+    string item;
+    vector<double> v;
+    igraph_vector_t v_graph,e_probs;
+    vector<double> edge_prob;
+    if(graphFile.is_open()){
+        while (getline(graphFile,line)) {
+            stringstream ss(line); // for split line
+            int i=0;
+            while(getline(ss,item,delimiter)){
+                if(i<2){
+                    v.push_back(stol(item));
+                }else{
+                    edge_prob.push_back(stof(item));
+                }
 
+                i+=1;
+            }
+        }
+
+
+        graphFile.close();
+    }
+
+    double * array=v.data();
+    igraph_vector_view(&v_graph, array, v.size());
+    UncertainGraph pg((igraph_real_t) nv);
+    pg.set_edges(&v_graph);
+
+    double * parray=edge_prob.data();
+    cout<<"init edge probs:"<<edge_prob.size()<<endl;
+    igraph_vector_view(&e_probs, parray, edge_prob.size());
+
+    pg.set_edges_probs(&e_probs);
+
+    cout<<"init uncertain graph from"<<filepath<<"in edges,p format"<<"OBfuscation output"<<endl;
+    
+    return pg;
+
+}
 
 

@@ -11,6 +11,7 @@
 #include <UncertainGraph.hpp>
 #include <map>
 #include <DDCal.hpp>
+#include <Help.hpp>
 using namespace std;
 //using boost::math::normal;
 
@@ -25,15 +26,22 @@ int sampleNum;
 void graphCastTest(){
     delimiter='\t';
     string filepath="/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt";
-    UncertainGraph graph=init_uncertain_from_file(filepath);
-    Graph g(graph);
+    UncertainGraph ug=init_uncertain_from_file(filepath);
     
+    Graph g(ug);
     g.graphStatstic();
+    ug.graphStastic();
+    igraph_vector_t degs;
+    igraph_vector_init(&degs,4);
+    //ug.getDegrees(true, &degs);
+    //print_vector(&degs, "expected degree");
+    
+    
     
 }
 
 void graphTest(){
-    // test baisc function about graph class
+    // test baisc function about certain class
     k=100;
     c=2;
     attempt=1;
@@ -48,6 +56,34 @@ void graphTest(){
     g.selfTest(100);
     igraph_real_t eps_res;
     UncertainGraph tpg=g.generateObfuscation(0.01, &eps_res);
+}
+
+
+void testObfuscation(){
+    k=100;
+    c=2;
+    attempt=1;
+    epsilon=0.0001;
+    noise=0.01;
+    delimiter='\t';
+    igraph_vector_t ak;
+    long int nv;
+    string inputPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/";
+    string obPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
+    string dataset="dblp";
+    string method="ADR1_dblp_ob.txt";
+    UncertainGraph ug=init_uncertain_from_file(inputPath+dataset+".txt");
+    nv=ug.nv;
+    igraph_vector_init(&ak,nv);
+    ug.getDegrees(false, &ak);
+    UncertainGraph uog=init_uncertain_OB_from_file(obPath+method, nv);
+    
+    uog.testAgaist(&ak);
+    
+    
+    
+    
+    
 }
 
 
@@ -87,8 +123,9 @@ void reliablityComparision(){
 }
 
 int main(){
-    graphTest();
-    //graphCastTest();
+   // graphTest();
+   // graphCastTest();
     //reliablityComparision();
+    testObfuscation();
     return 0;
 }
