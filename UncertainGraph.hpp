@@ -21,12 +21,15 @@ public:
     long ne;
 protected:
     igraph_vector_t pe;
+    void degreeDistribution(igraph_vector_t * res, igraph_real_t maxDegree); // used for sigmaUniquess cal
+    
 public:
     UncertainGraph(long nv);      // empty constructor
     UncertainGraph(const UncertainGraph & obj); // copy const constructor
     UncertainGraph(UncertainGraph & obj); // copy constructor
     UncertainGraph& operator=(const UncertainGraph & obj); //
     ~UncertainGraph(); // destructor function
+    
     void set_edges(igraph_vector_t * edges); // add edges to graph
     void set_edges_probs(igraph_vector_t * probs); // set edge probs to uncertain graph 
     
@@ -34,13 +37,24 @@ public:
     double testAgaist(igraph_vector_t * ak);
     void graphStastic(void); // basic graph statistics; linear function
     
+    
+    
+    void reliablityUtiliy(igraph_vector_t * ruv); // used for uncertain graph to cal
     void reliablity(igraph_vector_t * res); // used for uncertain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
     void getDegrees(bool expected, igraph_vector_t *res);  // used for uncertain graph to extract adversary 
     
     
+    
+    void sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma);
+    UncertainGraph generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); // used for uncertain graph
+    UncertainGraph obfuscation(igraph_vector_t *ak); // used for uncertain graph obfuscation
+
+    
+    UncertainGraph fixEdgeGraph(long int index,double val); // generate remove Graph via something subset
+    UncertainGraph sampleGraph(igraph_vector_t * indicator); // generate sample graph with indicator
     UncertainGraph sampleGraph(void); // generate sample graph
-    void print_graph(string filepath);
+    void print_graph(string filepath); // print graph to file
     
     
 };

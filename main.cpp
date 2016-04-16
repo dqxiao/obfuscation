@@ -12,6 +12,10 @@
 #include <map>
 #include <DDCal.hpp>
 #include <Help.hpp>
+#include <vector> 
+#include <cmath>
+#include <boost/tuple/tuple.hpp>
+
 using namespace std;
 //using boost::math::normal;
 
@@ -72,18 +76,14 @@ void testObfuscation(){
     string obPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
     string dataset="dblp";
     string method="ADR1_dblp_ob.txt";
+    
     UncertainGraph ug=init_uncertain_from_file(inputPath+dataset+".txt");
     nv=ug.nv;
     igraph_vector_init(&ak,nv);
-    ug.getDegrees(false, &ak);
+    ug.getDegrees(true, &ak);
     UncertainGraph uog=init_uncertain_OB_from_file(obPath+method, nv);
-    
-    uog.testAgaist(&ak);
-    
-    
-    
-    
-    
+//    uog.testAgaist(&ak);
+    ug.testAgaist(&ak);
 }
 
 
@@ -122,10 +122,42 @@ void reliablityComparision(){
 
 }
 
+
+void reliablityUtiltyTest(){
+    // uncertain graph
+    delimiter='\t';
+    sampleNum=20;
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
+    string testFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/testUncertainGraph.txt";
+    string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/ruv_dblp.txt";
+    UncertainGraph ug=init_uncertain_from_file(filepath);
+    
+    long int nv=ug.nv;
+    
+    igraph_vector_t ruv,rel;
+    igraph_vector_init(&ruv,nv);
+    
+    igraph_vector_init(&rel,nv);
+    
+
+    ug.reliablityUtiliy(&ruv);
+
+    vector_statstic(&ruv);
+    
+    write_vector_file(&ruv, ruvPath);
+    
+    igraph_vector_destroy(&ruv);
+    
+    
+}
+
+
+
 int main(){
    // graphTest();
    // graphCastTest();
     //reliablityComparision();
-    testObfuscation();
+    //testObfuscation();
+    reliablityUtiltyTest();
     return 0;
 }

@@ -7,6 +7,7 @@
 //
 
 #include "Help.hpp"
+#include <fstream>
 
 void call_print_vector(igraph_vector_t *v, FILE *f) {
     long int i;
@@ -74,3 +75,54 @@ void print_sp_matrix(const igraph_spmatrix_t *m, std::string exp){
      fprintf(stdout, "%s\n",exp.c_str());
      igraph_spmatrix_fprint(m, stdout);
 }
+
+
+void write_vector_file(igraph_vector_t *res, string filePath){
+    ofstream myfile(filePath);
+    long int nv=igraph_vector_size(res);
+    if(!myfile.is_open()){cout<<"can not open file"<<filePath<<endl;}
+    for(long int i=0;i<nv;i++){
+        myfile<<VECTOR(*res)[i]<<endl;
+    }
+    myfile.close();
+    cout<<"write"<<nv<<"line"<<endl;
+}
+
+void init_vector_file(igraph_vector_t *res, string filePath){
+    
+    ifstream myfile(filePath);
+    long int size;
+    string line;
+    
+    size=igraph_vector_size(res);
+    
+    if(!myfile.is_open()){
+        cout<<"can not open "<<filePath<<endl;
+        exit(0);
+    }
+    
+    for(long int i=0;i<size;i++){
+        getline(myfile,line);
+        igraph_vector_set(res,i, stod(line));
+    }
+}
+
+// just for debugging purpose
+void vector_statstic(igraph_vector_t *input){
+    
+    double max,min,mean,sum;
+    
+    long int size=igraph_vector_size(input);
+    max=igraph_vector_max(input);
+    min=igraph_vector_min(input);
+    sum=igraph_vector_sum(input);
+    mean=(double)sum/size;
+    
+    cout<<"basic stastic for this vector"<<endl;
+    cout<<"max"<<"\t"<<"min"<<"\t"<<"mean"<<endl;
+    cout<<max<<"\t"<<min<<"\t"<<mean<<endl;
+    
+    cout<<"suggested interval: "<<(max-min)/20<<endl;
+    
+}
+

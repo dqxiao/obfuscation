@@ -32,8 +32,12 @@ public:
     void set_edges(igraph_vector_t * edges); // add edges to graph
     
     // graph property
+    long int getNE(void);
     void graphStatstic(void);
     void metric(igraph_vector_t *res, double p); // used for uncertain graph for cal AD
+    
+    
+    igraph_real_t connectedVPairs(void);// used for uncertain graph for cal something
     
     void reliablity(igraph_vector_t * res,double p); // used for uncertain/certain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
@@ -62,9 +66,7 @@ public:
 // Graph I/O
 Graph init_from_file(string filepath);
 Graph init_from_Adj_File(string filepath);
-//vector file I.O
-void write_vector_file(igraph_vector_t *res, string filePath);
-void init_vector_file(igraph_vector_t *res, string filePath);
+
 
 
 

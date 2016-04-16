@@ -13,6 +13,7 @@
 #include <igraph.h>
 #include <string>
 #include <iostream>
+using namespace std;
 
 // just for debugging 
 void print_vector(igraph_vector_t *v, std::string exp);
@@ -76,5 +77,12 @@ public:
         return false;
     };
 };
+
+
+
+//vector file I.O
+void write_vector_file(igraph_vector_t *res, string filePath);
+void init_vector_file(igraph_vector_t *res, string filePath);
+void vector_statstic(igraph_vector_t *input);
 
 #endif /* Help_hpp */

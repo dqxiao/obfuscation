@@ -146,7 +146,7 @@ double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test){
     
     for(long int i=0;i<refLen;i++){
         double mean_error=std::abs((double)VECTOR(*ref)[i]-(double)VECTOR(*test)[i]);
-        mean_error/=refLen;
+        
         dis_sum+=mean_error;
     }
     
@@ -168,5 +168,8 @@ double cal_relative_error_vector(igraph_vector_t * one, igraph_vector_t * second
 
 
 
+long int permuateCal(long int number){
+    return number*(number-1);
+}
 
 

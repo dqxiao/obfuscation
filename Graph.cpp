@@ -17,6 +17,7 @@
 #include "Help.hpp"
 #include "DDCal.hpp"
 #include <random>
+#include <map>
 #include "truncated_normal.hpp"
 using boost::math::normal;
 
@@ -46,12 +47,17 @@ Graph::Graph(UncertainGraph & obj){
 }
 
 Graph::~Graph(){
+    //cout<<"call graph deconstuction function"<<endl;
     igraph_destroy(&graph);
 }
 void Graph::set_edges(igraph_vector_t *edges){
     igraph_add_edges(&graph, edges, 0);
     ne=igraph_vector_size(edges);
     ne/=2;
+}
+
+long int Graph::getNE(){
+    return ne;
 }
 
 void Graph::graphStatstic(){
@@ -85,6 +91,50 @@ void Graph::metric(igraph_vector_t *res,double p){
     igraph_vector_set(res,pos_md,VECTOR(*res)[pos_md]+md*p);
     
     igraph_vector_destroy(&degrees);
+}
+
+
+igraph_real_t Graph::connectedVPairs(void){
+    igraph_vector_t edges;
+    std::map<long int, long int> c_component;
+    igraph_real_t nVpairs;
+    
+    
+    
+    nVpairs=0;
+    igraph_vector_init(&edges,2*ne);
+   
+    igraph_get_edgelist(&graph, &edges, false);
+    vector<long int> rank (nv);
+    vector<long int> parent(nv);
+    
+    for(int i=0;i<nv;i++){
+        rank[i]=i;
+        parent[i]=i;
+    }
+    
+    boost::disjoint_sets<long int *, long int * > ds(&rank[0],&parent[0]);
+    
+    // link via each edge
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(edges)[2*i];
+        long int to=VECTOR(edges)[2*i+1];
+        ds.union_set(from,to);
+    }
+    
+    
+    for(long int i=0;i<nv;i++){
+        long int rep=ds.find_set(i);
+        ++c_component[rep];
+    }
+    
+    for(auto entry: c_component){
+        nVpairs+=permuateCal(entry.second);
+    }
+
+    
+    igraph_vector_destroy(&edges);
+    return nVpairs;
 }
 
 void Graph::reliablity(igraph_vector_t *res, double p){
@@ -125,6 +175,7 @@ void Graph::reliablity(igraph_vector_t *res, double p){
     for(long int i=0;i<nv;i++){
         double inc=VECTOR(c_component)[(int)(VECTOR(v_component)[i])]-1;
         inc*=p;
+        inc/=nv-1;
         igraph_vector_set(res,i,VECTOR(*res)[i]+inc);
     }
 
@@ -236,15 +287,18 @@ void Graph::selfTest(int k){
  *
  */
 void Graph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma){
-    igraph_vector_t s_com,freqs;
+    igraph_vector_t s_com,freqs,degrees;
     
     normal ns(0,sigma);
     
     igraph_vector_init(&freqs,maxDegree+1);
     igraph_vector_init(&s_com,maxDegree+1);
+    igraph_vector_init(&degrees,nv);
+    
+    igraph_degree(&graph, &degrees, igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
     
     for(long int i=0;i<nv;i++){
-        long int degree=VECTOR(ak)[i];
+        long int degree=VECTOR(degrees)[i];
         igraph_vector_set(&freqs, degree, VECTOR(freqs)[degree]+1);
     }
     
@@ -266,7 +320,7 @@ void Graph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_
         igraph_vector_set(&s_com,i,1.0/val);
     }
     
-    
+    // map use adversary knowledge
     for(long int i=0;i<nv;i++){
         long int degree=VECTOR(ak)[i];
         igraph_vector_set(uv,i,VECTOR(s_com)[degree]);
@@ -736,32 +790,3 @@ Graph init_from_Adj_File(string filepath){
 
 
 
-void write_vector_file(igraph_vector_t *res, string filePath){
-    ofstream myfile(filePath);
-    long int nv=igraph_vector_size(res);
-    if(!myfile.is_open()){cout<<"can not open file"<<filePath<<endl;}
-    for(long int i=0;i<nv;i++){
-        myfile<<VECTOR(*res)[i]<<endl;
-    }
-    myfile.close();
-    cout<<"write"<<nv<<"line"<<endl;
-}
-
-void init_vector_file(igraph_vector_t *res, string filePath){
-    
-    ifstream myfile(filePath);
-    long int size;
-    string line;
-    
-    size=igraph_vector_size(res);
-    
-    if(!myfile.is_open()){
-        cout<<"can not open "<<filePath<<endl;
-        exit(0);
-    }
-
-    for(long int i=0;i<size;i++){
-        getline(myfile,line);
-        igraph_vector_set(res,i, stod(line));
-    }
-}
