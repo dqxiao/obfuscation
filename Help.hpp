@@ -80,6 +80,28 @@ public:
 
 
 
+class ProbEdge{
+public:
+    long int from;
+    long int to;
+    long int rep;
+    double pe;
+    
+    ProbEdge(long int f, long int t, long int r, double p): from(f),to(t),rep(r),pe(p){};
+    
+    bool operator<(const ProbEdge & other) const{
+        if(rep<other.rep){return true;}
+        if(rep>other.rep){return false;}
+        
+        if(from<other.from){return true;}
+        if(from>other.from){return false;}
+        
+        return to<other.to;
+    };
+};
+
+
+
 //vector file I.O
 void write_vector_file(igraph_vector_t *res, string filePath);
 void init_vector_file(igraph_vector_t *res, string filePath);

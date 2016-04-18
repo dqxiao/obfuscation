@@ -1,3 +1,4 @@
+
 //
 //  UncertainGraph.cpp
 //  testGraphCplus
@@ -15,8 +16,11 @@
 #include <vector>
 #include <sstream>
 #include <boost/math/distributions/normal.hpp>
+#include <boost/pending/disjoint_sets.hpp>
 #include <random>
+#include <map>
 #include <boost/math/special_functions/round.hpp>
+#include <truncated_normal.hpp>
 using boost::math::normal;
 using boost::math::iround;
 using namespace std;
@@ -192,24 +196,15 @@ void UncertainGraph::graphStastic(){
     cout<<"exp degree (mean):"<<edgePSum*2/nv<<endl;
 }
 
-/**
- *
- */
-void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
+
+void UncertainGraph::rawEstimate(igraph_vector_t *r_edge){
+    
     igraph_vector_t e_edge;
     igraph_vector_t n_edge;
-    igraph_vector_t r_edge;
-    igraph_vector_t edges;
     igraph_vector_t peOb;
-    vector<long int> sedges; // record ID of some edges which is very close to 1
-    
-    
-    
     
     igraph_vector_init(&e_edge,ne);
     igraph_vector_init(&n_edge,ne);
-    igraph_vector_init(&r_edge,ne);
-    igraph_vector_init(&edges,2*ne);
     igraph_vector_init(&peOb, ne);
     
     double p=1.0/sampleNum;
@@ -226,22 +221,18 @@ void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
         UncertainGraph sg=sampleGraph(&ind);
         
         
-//        cout<<"ne:"<<sg.ne<<endl;
-//        cout<<"indSum:"<<igraph_vector_sum(&ind)<<endl;
-    
-
         Graph g(sg);
         
         if(g.getNE()!=igraph_vector_sum(&ind)){
             throw std::exception();
         }
-
+        
         
         nvp=g.connectedVPairs();
         
         
         nvp=(double)nvp/nv;
-        nvp=(double)nvp/(nv-1);
+        //nvp=(double)nvp/(nv-1);
         nvp*=p;
         
         
@@ -261,8 +252,8 @@ void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
     }
     
     
-   // print_vector(&peOb,"observed pe");
-   // print_vector(&pe,"real pe");
+    // print_vector(&peOb,"observed pe");
+    // print_vector(&pe,"real pe");
     
     cout<<"mean diff"<<cal_mean_error_vector(&pe, &peOb)<<endl;
     
@@ -273,41 +264,473 @@ void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
         double eVal=VECTOR(e_edge)[i]/p_e;
         double nVal=VECTOR(n_edge)[i]/(1-p_e);
         double diff=0;
-        if(p_e<p || p_e>1-p){
-            sedges.push_back(i);
-            
-            if(p_e<p && eVal==0.0){
-                igraph_vector_set(&r_edge,i,nVal);
-                continue;
-            }
-            
-            if(p_e>1-p && nVal==0.0){
-                igraph_vector_set(&r_edge,i,eVal);
-                continue;
-            }
-            
-            
+        
+        
+        
+        if(p_e<10*p){
+            //sedges.push_back(i);
+            igraph_vector_set(r_edge,i,nVal);
+            continue;
         }
         
-        if(eVal>nVal){
+        if(p_e>1-10*p){
+            //sedges.push_back(i);
+            igraph_vector_set(r_edge,i,eVal);
+            continue;
+        }
+        
+        
+        
+        
+        if(eVal>nVal && nVal!=0){
             diff=eVal-nVal;
+            igraph_vector_set(r_edge,i,diff);
         }
         
-        igraph_vector_set(&r_edge,i,diff);
+        
+        
+    }
+
+    
+//    string debugFile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/edgeReliablityDiff.txt";
+//    cout<<"write the reliablity diff of each edge"<<endl;
+//    write_vector_file(r_edge, debugFile);
+//    cout<<"statsitc about the reliablity of edges"<<endl;
+//    vector_statstic(r_edge);
+//    long int pos=igraph_vector_which_max(r_edge);
+//    cout<<"the max val is gained by this position"<<pos<<endl;
+//    cout<<"prob of edge:"<<VECTOR(peOb)[pos]<<endl;
+//    cout<<"prob of edge real:"<<VECTOR(pe)[pos]<<endl;
+    
+    igraph_vector_destroy(&e_edge);
+    igraph_vector_destroy(&n_edge);
+    
+}
+
+
+void UncertainGraph::maxConnectedConponent(igraph_vector_t * re_edges, igraph_vector_t * re_pe, igraph_vector_t * startPos, long int * cnums){
+    
+    igraph_vector_t edges, v_rep;
+    
+    igraph_vector_init(&edges,2*ne);
+    igraph_get_edgelist(&graph, &edges, false);
+    igraph_vector_init(&v_rep,nv);
+    
+
+   
+    
+    
+   
+    
+    
+    
+    vector<long int> rank (nv);
+    vector<long int> parent(nv);
+    
+    vector<ProbEdge> probEdges;
+    
+    for(int i=0;i<nv;i++){
+        rank[i]=i;
+        parent[i]=i;
     }
     
-    // just for debugging
+    boost::disjoint_sets<long int *, long int * > ds(&rank[0],&parent[0]);
     
+    // link via each edge
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(edges)[2*i];
+        long int to=VECTOR(edges)[2*i+1];
+        ds.union_set(from,to);
+    }
+    
+    
+    for(long int i=0;i<nv;i++){
+        long int vrep=ds.find_set(i);
+        igraph_vector_set(&v_rep,i,vrep);
+    }
+    
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(edges)[2*i];
+        long int to=VECTOR(edges)[2*i+1];
+        double   p=VECTOR(pe)[i];
+        
+        long int from_rep=VECTOR(v_rep)[from];
+        long int to_rep=VECTOR(v_rep)[to];
+        
+        if(from_rep!=to_rep){
+            throw std::exception();
+        }
+        //sorted by rep, from, to
+        probEdges.push_back(ProbEdge(from,to,from_rep,p));
+    }
+    
+    sort(probEdges.begin(),probEdges.end());
+    
+
+    long int repCount=0;
+    long c_rep=-1;
+    
+    for(long int i=0;i<ne;i++){
+        ProbEdge pEdge=probEdges[i];
+        
+        if(pEdge.rep!=c_rep){
+            igraph_vector_set(startPos,repCount,i);
+            c_rep=pEdge.rep;
+            repCount+=1;
+        }
+        
+        
+        igraph_vector_set(re_edges,2*i,pEdge.from);
+        igraph_vector_set(re_edges,2*i,pEdge.to);
+        igraph_vector_set(re_pe,i,pEdge.pe);
+        
+       
+    }
+    
+    igraph_vector_set(startPos, repCount, ne);
+    
+    *cnums=repCount;
+    
+    cout<<"repCount:"<<repCount<<endl;
+    cout<<"ne"<<ne<<endl;
+    cout<<"last startPos:"<<VECTOR(*startPos)[repCount-1]<<endl;
+   
+   
+    
+    
+    
+
+    rank.clear();
+    parent.clear();
+    probEdges.clear();
+    igraph_vector_destroy(&edges);
+    igraph_vector_destroy(&v_rep);
+    
+    
+    
+}
+
+double UncertainGraph::diffconectPairAddEdge(double from, double to){
+    
+    double diff=0.0;
+    double p=1.0/sampleNum;
+    for(long int i=0;i<sampleNum;i++){
+        UncertainGraph sg=sampleGraph();
+        Graph g(sg);
+        
+        if(i%10==0){
+            cout<<i<<" diff connect pair add edge"<<endl;
+        }
+        
+        diff=diff+(g.diffconectPairAddEdge(from, to)*p);
+        
+    }
+ 
+    return diff;
+}
+
+
+
+void UncertainGraph::reliablityUtiitySubgraphCall(igraph_vector_t * res){
+    igraph_vector_t e_edge,n_edge,pe_ob ;
+    
+    
+  
+    igraph_vector_init(&e_edge,ne);
+    igraph_vector_init(&n_edge,ne);
+    igraph_vector_init(&pe_ob,ne);
+   
+    
+    double p=1.0/sampleNum;
+    for(long int i=0;i<sampleNum;i++){
+        igraph_vector_t indicator;
+        igraph_vector_init(&indicator,ne);
+        
+        if(i%10==0){
+            cout<<i<<"utiltiy via subgraph call"<<endl;
+        }
+        
+        UncertainGraph usg=sampleGraph(&indicator);
+        Graph g(usg);
+        
+        double nvp=(double)g.connectedVPairs();
+        nvp*=p;
+        
+        for(long int i=0;i<ne;i++){
+            if(VECTOR(indicator)[i]==1){
+                igraph_vector_set(&e_edge,i,VECTOR(e_edge)[i]+nvp);
+                igraph_vector_set(&pe_ob,i,VECTOR(pe_ob)[i]+p);
+            }else{
+                igraph_vector_set(&n_edge,i,VECTOR(n_edge)[i]+nvp);
+            }
+        }
+        
+        igraph_vector_destroy(&indicator);
+        
+    }
+    
+    
+    for(long int i=0;i<ne;i++){
+        double spe=VECTOR(pe_ob)[i];
+        
+        if(spe>1-10*p){
+            continue;
+        }
+        
+        if(spe<10*p){
+            continue;
+        }
+        
+        double eval=VECTOR(e_edge)[i]/spe;
+        double nval=VECTOR(n_edge)[i]/(1-spe);
+        
+        
+        double diff=eval-nval;
+        
+        igraph_vector_set(res,i,diff);
+        
+        
+        
+        
+    }
+    
+    
+    igraph_vector_destroy(&e_edge);
+    igraph_vector_destroy(&n_edge);
+    igraph_vector_destroy(&pe_ob);
+    
+}
+
+
+
+
+
+void UncertainGraph::reliablityUtilitySubgraph(igraph_vector_t *ruv){
+    
+    igraph_vector_t re_edge,re_pe,start_pos; // reoriginzed edges, pe, and start pos
+    igraph_vector_t relDiff_edge; // relDiff edges
+    long int cnums;
+    cnums=0;
+    
+    igraph_vector_init(&re_edge,2*ne);
+    igraph_vector_init(&re_pe,ne);
+    igraph_vector_init(&start_pos,nv);
+    maxConnectedConponent(&re_edge,&re_pe,&start_pos,&cnums);
+    
+    
+    igraph_vector_init(&relDiff_edge,ne);
+    
+    
+    cout<<"there are "<<cnums<<" components"<<endl;
+    
+    // before debuging
+    igraph_vector_t numComponents;
+    igraph_vector_init(&numComponents,cnums);
+    
+    for(long int i=0;i<cnums;i++){
+        long int start=VECTOR(start_pos)[i];
+        long int end=VECTOR(start_pos)[i+1];
+        igraph_vector_set(&numComponents,i,end-start);
+    }
+    
+    write_vector_file(&numComponents, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/numEdge.txt");
+    
+    vector_statstic(&numComponents);
+    
+    igraph_vector_destroy(&numComponents);
+    
+    
+    
+    for(long int i=0;i<cnums;i++){
+        long int start=VECTOR(start_pos)[i];
+        long int end=VECTOR(start_pos)[i+1];
+        
+        // only one edge inside
+        cout<<i<<"th components"<<endl;
+        if(end-start<100){
+            
+            for(long int pos=start;pos<end;pos++){
+                igraph_vector_set(&relDiff_edge,pos,0);
+            }
+
+        }else{
+            
+            
+            long int size=end-start;
+            igraph_vector_t subedges, subpes;
+            igraph_vector_t subrdiff;
+            long int sedges; // some edges whose probability ~0, ~1
+            
+            igraph_vector_init(&subedges,2*size);
+            igraph_vector_init(&subpes,size);
+            igraph_vector_init(&subrdiff,size);
+            
+            if(size<500){
+            
+                sampleNum=100;
+            }else{
+                sampleNum=1000;
+                if(size/1000>5){
+                    sampleNum=10000;
+                }
+            }
+            double p=1.0/sampleNum;
+            sedges=0;
+            
+            
+            cout<<size<<"edges"<<endl;
+            
+            for(long int i=0;i<size;i++){
+                long relPos=i+start;
+                
+                igraph_vector_set(&subedges,2*i,VECTOR(re_edge)[2*relPos]);
+                igraph_vector_set(&subedges,2*i+1,VECTOR(re_edge)[2*relPos+1]);
+                igraph_vector_set(&subpes,i,VECTOR(re_pe)[relPos]);
+                
+                if(VECTOR(re_pe)[relPos]>0.89 || VECTOR(re_pe)[relPos]<0.11){
+                    sedges+=1;
+                }
+            }
+        
+            
+            
+            UncertainGraph usubg(nv);
+            
+            usubg.set_edges(&subedges);
+            usubg.set_edges_probs(&subpes);
+            
+            
+            
+            
+           
+            
+            
+            usubg.reliablityUtiitySubgraphCall(&subrdiff);
+            
+            
+            //refine work local pos
+            
+            if(size<100){
+                sampleNum=10;
+            }else{
+                sampleNum=100;
+            }
+            
+            
+            cout<<"it take a while for each iteration for refined"<<endl;
+            cout<<sedges<<"~0 ~1 edges in"<<endl;
+            
+            
+            if(sedges==0){
+                continue;
+            }
+            for(long int i=0;i<size;i++){
+                
+                if(VECTOR(subpes)[i]>0.89 || VECTOR(subpes)[i]<0.11){
+//                    UncertainGraph ufsg=usubg.fixEdgeGraph(i, 0.0);
+//                    
+//                    long int from=VECTOR(subedges)[2*i];
+//                    long int to=VECTOR(subedges)[2*i+1];
+//                    
+//                    double subedif=ufsg.diffconectPairAddEdge(from, to);
+                    
+                    igraph_vector_set(&subrdiff,i,0);
+                    
+                    continue;
+                }
+                
+                
+                
+            }
+            
+            cout<<"merge result into real edges"<<endl;
+            
+            for(long int i=0;i<size;i++){
+                long relPos=i+start;
+                igraph_vector_set(&relDiff_edge,relPos,VECTOR(subrdiff)[i]);
+            }
+            
+        
+            
+            igraph_vector_destroy(&subedges);
+            igraph_vector_destroy(&subpes);
+            igraph_vector_destroy(&subrdiff);
+        
+        }
+        
+        // finish=0
+        
+        
+        
+        
+        
+      
+        
+    }
+    
+    string debugRefFile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/edgeReliablityDiffRef.txt";
+    cout<<"write the reliablity diff of each edge"<<endl;
+    write_vector_file(&relDiff_edge, debugRefFile);
+    cout<<"statsitc about the reliablity of edges"<<endl;
+    vector_statstic(&relDiff_edge);
+    long int posRef=igraph_vector_which_max(&relDiff_edge);
+    cout<<"the max val is gained by this position"<<posRef<<endl;
+    cout<<"prob of edge real:"<<VECTOR(pe)[posRef]<<endl;
+    
+    
+    
+    igraph_vector_destroy(&re_edge);
+    igraph_vector_destroy(&re_pe);
+    igraph_vector_destroy(&start_pos);
+    igraph_vector_destroy(&relDiff_edge);
+    
+    
+}
+
+
+/**
+ *
+ */
+void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
+   
+    igraph_vector_t r_edge;
+    igraph_vector_t edges;
+    
+    vector<long int> sedges; // record ID of some edges which is very close to 1
+    
+
+  
+    igraph_vector_init(&r_edge,ne);
+    igraph_vector_init(&edges,2*ne);
+    
+    
+    
+    // just for debugging
     cout<<"the number of edge ~0, ~1:" <<sedges.size()<<endl;
     
+    init_vector_file(&r_edge,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/edgeReliablityDiff.txt");
     
-    sampleNum=20;
+    
+    for(long int i=0;i<ne;i++){
+        double p_v=VECTOR(pe)[i];
+        if(p_v>1-10.0/sampleNum){
+            sedges.push_back(i);
+        }
+    }
+    
+
+    
+    
+    
+    sampleNum=10;
     long int i=0;
     for(auto item: sedges){
+        
+        
         cout<<i<<"special edge"<<endl;
-        cout<<"p_e"<<VECTOR(peOb)[item]<<endl;
+        cout<<"p_e"<<VECTOR(pe)[item]<<endl;
         i+=1;
-        if(VECTOR(peOb)[item]>0.5){
+        if(VECTOR(pe)[item]>0.5){
             igraph_vector_t rel;
             double n_val,diff,e_val;
             igraph_vector_init(&rel,nv);
@@ -350,15 +773,15 @@ void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
     
     
     
-    string debugFile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/edgeReliablityDiff.txt";
+    string debugRefFile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/edgeReliablityDiffRef.txt";
     cout<<"write the reliablity diff of each edge"<<endl;
-    write_vector_file(&r_edge, debugFile);
+    write_vector_file(&r_edge, debugRefFile);
     cout<<"statsitc about the reliablity of edges"<<endl;
     vector_statstic(&r_edge);
-    long int pos=igraph_vector_which_max(&r_edge);
-    cout<<"the max val is gained by this position"<<pos<<endl;
-    cout<<"prob of edge:"<<VECTOR(peOb)[pos]<<endl;
-    cout<<"prob of edge real:"<<VECTOR(pe)[pos]<<endl;
+    long int posRef=igraph_vector_which_max(&r_edge);
+    cout<<"the max val is gained by this position"<<posRef<<endl;
+   // cout<<"prob of edge:"<<VECTOR(peOb)[posRef]<<endl;
+    cout<<"prob of edge real:"<<VECTOR(pe)[posRef]<<endl;
     
     
     
@@ -373,14 +796,13 @@ void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
         long int to=VECTOR(edges)[2*i+1];
         
         double rdiff=VECTOR(r_edge)[i];
-        rdiff*=VECTOR(peOb)[i];
+        rdiff*=VECTOR(pe)[i];
         igraph_vector_set(ruv,from, VECTOR(*ruv)[from]+rdiff);
         igraph_vector_set(ruv, to, VECTOR(*ruv)[to]+rdiff);
     }
     
     //
-    igraph_vector_destroy(&e_edge);
-    igraph_vector_destroy(&n_edge);
+    
     igraph_vector_destroy(&r_edge);
     igraph_vector_destroy(&edges);
     //done
@@ -527,15 +949,331 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
     
     igraph_vector_destroy(&s_com);
     igraph_vector_destroy(&freqs);
+    igraph_vector_destroy(&degrees);
+}
+
+
+UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, igraph_real_t *eps_res, igraph_vector_t *ak){
+    
+    UncertainGraph pg(nv);
+    
+    igraph_real_t epsilonStart,maxDegree;
+    igraph_vector_t degrees,uv,eids;
+    
+    igraph_matrix_t  EIndicator;
+    vector<double> lowNodes;
+    vector<int> edgeShuffle;
+    vector<Node_UN> nodeUNs;
+    
+    
+    
+    epsilonStart=1;
+    igraph_vector_init(&degrees,nv);
+    igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
+    maxDegree=igraph_vector_max(ak);
+    igraph_vector_init(&uv,nv);
+    
+    
+    printf("start the computation of the sigma-uniqueness of all V \n");
+    sigmaUniquess(&uv, *ak, maxDegree, sigma);
+    printf("finish the computation \n");
+    
+    
+    
+    int skip_count=(int) lround(epsilon*nv/2)+1;
+    
+    
+    for(long int i=0;i<nv;i++){
+        nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],VECTOR(uv)[i]));
+        lowNodes.push_back(VECTOR(uv)[i]);
+    }
+    
+    
+    sort(nodeUNs.begin(),nodeUNs.end());
+    
+    for(int i=0;i<skip_count;i++){
+        Node_UN  nu=nodeUNs[i];
+        long int pos=nu.nodeID;
+        lowNodes[pos]=0;
+    }
+    
+    discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
+    uniform_real_distribution<double> unDist(0.0,1.0);
+    uniform_real_distribution<double> unGenDist(0.0,1.0);
+    default_random_engine sgen; // random engine
+    
+    
+    
+    
+    printf("number of vertices:%li \n",nv);
+    
+    
+    igraph_matrix_init(&EIndicator,nv,nv);
+    igraph_vector_init(&eids, 0);
+    igraph_get_edgelist(&graph, &eids, false);
+    
+    
+    
+    /*init E indicator matrix with p_e*/
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(eids)[2*i];
+        long int to=VECTOR(eids)[2*i+1];
+        double p_e=VECTOR(pe)[i];
+        if(from>to){
+            swap(from,to);
+        }
+        
+        if(from==to){
+            throw std::exception();
+        }
+        igraph_matrix_set(&EIndicator, from, to, p_e);
+    }
+    
+    
+    
+    
+    /*randomized geneation candiates*/
+    for(int tn=0;tn<attempt;tn++){
+        
+        long int ce=lround(c*ne);
+        igraph_vector_t EC,ue,pe;
+        long int k=0;
+        long count=ne;
+        igraph_matrix_t ECIndicator;
+        igraph_real_t ueSum,sigma_Sum;
+        ueSum=0;
+        sigma_Sum=0;
+        
+        random_device rd;
+        
+        std::mt19937 gen(rd());
+        
+        
+        // initiate EC
+        igraph_vector_init(&EC, 2*ce);
+        igraph_matrix_init(&ECIndicator, nv, nv);
+        
+        
+        
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(eids)[2*i];
+            long int to=VECTOR(eids)[2*i+1];
+            if(from>to){
+                swap(from,to);
+            }
+            igraph_matrix_set(&ECIndicator,from,to,1);
+        }
+        
+        
+        
+        printf("iteration %d\n",tn);
+        printf("select %li edges from %li nodes \n", ce,nv-skip_count);
+        
+        // select edge
+        while(true){
+            
+            long int u=distribution(gen);
+            long int v=distribution(gen);
+            
+            
+            if(u==v){
+                continue;
+            }
+            
+            if(u>v){
+                swap(u,v);
+            }
+            
+            double pickP=unDist(gen);
+            
+            if(MATRIX(EIndicator,u,v)>pickP){
+              
+                
+                // remove Edge from EC
+                if(MATRIX(ECIndicator, u, v)==1){
+                    count-=1;
+                    igraph_matrix_set(&ECIndicator,u,v,0);
+                }
+                
+            }else{
+                
+                // add Edge into EC
+                if(MATRIX(ECIndicator, u, v)==0 && MATRIX(EIndicator, u, v)==0){
+                    igraph_vector_set(&EC, k++,u);
+                    igraph_vector_set(&EC, k++,v);
+                    
+                    count+=1;
+                    igraph_matrix_set(&ECIndicator,u,v,1);
+                }
+                
+            }
+            
+            if(count==ce){
+                break;
+            }
+            
+        }
+        
+        long int exist=0;
+        
+        for(long int i=0;i<2*ne;i+=2){
+            long int from=VECTOR(eids)[i];
+            long int to=VECTOR(eids)[i+1];
+            if(from>to){
+                swap(from,to);
+            }
+            
+            if(MATRIX(ECIndicator,from,to)==1){
+                igraph_vector_set(&EC, k++, from);
+                igraph_vector_set(&EC, k++, to);
+                exist+=1;
+            }
+            
+        }
+        
+       
+        printf("finish edge selection:%li edges \n", k);
+        printf("select edge from existing edge :%li\n",exist);
+        printf("size of EC : %li\n", igraph_vector_size(&EC));
+        printf("cout:%li, ce:%li, k:%li \n",count,ce,k);
+        
+        
+        
+        if(k!=2*ce){
+            throw std::exception();
+        }
+        
+        
+        
+        igraph_vector_init(&ue,ce);
+        igraph_vector_init(&pe,ce);
+        
+        
+        
+        
+        
+        for(long int i=0;i<2*ce;i+=2){
+            igraph_real_t eVal=0;
+            eVal+=VECTOR(uv)[int(VECTOR(EC)[i])];
+            eVal+=VECTOR(uv)[int(VECTOR(EC)[i+1])];
+            eVal/=2;
+            ueSum+=eVal;
+            igraph_vector_set(&ue,i/2,eVal);
+        }
+        
+        
+        igraph_vector_scale(&ue,1.0/ueSum);
+        
+        int seed=1246789091;
+        int unCount=0;
+        double reSum=0;
+        printf("start inject uncertainty \n");
+        
+        // add one random shuffle to help
+        
+        
+        for(long int i=0;i<ce;i++){
+            
+            
+            igraph_real_t sigma_e=sigma*ce*VECTOR(ue)[i];
+            
+            double w=unDist(gen);
+            sigma_Sum+=sigma_e;
+            igraph_real_t re=0;
+            
+            
+            long int from=VECTOR(EC)[2*i];
+            long int to=VECTOR(EC)[2*i+1];
+            
+            
+            
+            
+            if(from>to){
+                swap(from,to);
+            }
+            
+            double old_p_e=MATRIX(EIndicator,from,to);
+            
+            if(w<noise){
+                re=unGenDist(sgen);
+                unCount+=1;
+                re*=(2*(0.5-old_p_e));
+            }else{
+                re=truncated_normal_ab_sample(0.0, sqrt((double) sigma_e), 0.0, 1.0, seed);
+                // re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
+                
+                re*=(2*(0.5-old_p_e));
+                
+            }
+            
+            // generate the solution
+            igraph_vector_set(&pe,i,old_p_e+re);
+            
+    
+            reSum+=re;
+        }
+        
+        
+        printf("finish inject uncertainty \n");
+        
+        printf("inject uncertainty %f \n", reSum/ce);
+        
+        printf("inject uncertainty over white noise %f \n", (double)unCount/ce);
+        
+        printf("sum of edge :%f \n", igraph_vector_sum(&pe));
+        
+        printf("average of sigme %f \n",sigma_Sum/ce);
+        
+        printf("init edge and probs \n");
+        UncertainGraph pGraph((igraph_integer_t)nv);
+        pGraph.set_edges(&EC);
+        pGraph.set_edges_probs(&pe);
+        
+        igraph_vector_destroy(&ue);
+        igraph_vector_destroy(&pe);
+        igraph_vector_destroy(&EC);
+        igraph_matrix_destroy(&ECIndicator);
+        double epsilon_G=pGraph.testAgaist(ak);
+        
+        if(epsilon_G<epsilonStart){
+            pg=pGraph;
+            epsilonStart=epsilon_G;
+            cout<<"find better obfuscation one :"<<epsilon_G<<endl;
+        }
+        
+        cout<<"finish "<<tn<<" attempt" <<endl;
+    }
+    
+    
+    
+    //igraph_vector_destroy(&cuv);
+    igraph_vector_destroy(&degrees);
+    igraph_vector_destroy(&uv);
+    igraph_matrix_destroy(&EIndicator);
+    
+    
+    *eps_res=epsilonStart;
+    
+    
+    
+    
+    
+    return pg;
+    
 }
 
 
 UncertainGraph UncertainGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak){
-    UncertainGraph g(nv);
+   
     
     
-    // how to calculate ... 
-    return g;
+    if(option==randPert){
+        return randomGenerateObfuscation(sigma, eps_res, ak);
+    }else{
+        return randomGenerateObfuscation(sigma, eps_res, ak);
+    }
+    
+    
 }
 
 UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
@@ -646,8 +1384,8 @@ UncertainGraph UncertainGraph::sampleGraph(igraph_vector_t * indicator){
         throw std::exception();
     }
     
-    cout<<"sample Edge.size()"<<sampleEdges.size()<<endl;
-    cout<<"edge sum in sample Graph:"<<igraph_vector_sum(indicator)<<endl;
+   // cout<<"sample Edge.size()"<<sampleEdges.size()<<endl;
+   // cout<<"edge sum in sample Graph:"<<igraph_vector_sum(indicator)<<endl;
     
     
     if(sampleEdges.size()!=0){

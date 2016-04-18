@@ -15,17 +15,17 @@
 #include <vector> 
 #include <cmath>
 #include <boost/tuple/tuple.hpp>
-
 using namespace std;
 //using boost::math::normal;
 
 int k;
-int c;
+double c;
 int attempt;
 double epsilon;
 double noise;
 char delimiter;
 int sampleNum;
+Option option;
 
 void graphCastTest(){
     delimiter='\t';
@@ -123,33 +123,125 @@ void reliablityComparision(){
 }
 
 
+
+
 void reliablityUtiltyTest(){
     // uncertain graph
     delimiter='\t';
-    sampleNum=20;
+    sampleNum=10000;
     string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
     string testFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/testUncertainGraph.txt";
     string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/ruv_dblp.txt";
     UncertainGraph ug=init_uncertain_from_file(filepath);
     
+   // Graph g(ug);
+    
+
+    
+    
+
+    
     long int nv=ug.nv;
+//
+//
     
     igraph_vector_t ruv,rel;
     igraph_vector_init(&ruv,nv);
-    
+//
     igraph_vector_init(&rel,nv);
     
-
-    ug.reliablityUtiliy(&ruv);
-
+    
+    ug.reliablityUtilitySubgraph(&ruv);
+//    ug.reliablityUtiliy(&ruv);
+////
+////    
+////
     vector_statstic(&ruv);
-    
+//
     write_vector_file(&ruv, ruvPath);
-    
+//
     igraph_vector_destroy(&ruv);
     
     
+    
+    
+    
+    // inverstigate degree
+    
+//    igraph_vector_t degres;
+//    igraph_vector_init(&degres,nv);
+//    
+//    g.degrees(&degres);
+//    string degfile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/deg_dblp.txt";
+//    vector_statstic(&degres);
+//    write_vector_file(&degres,degfile);
+//    
+//    igraph_vector_destroy(&degres);
+    
+    
+    
+    
+    
+    
+    
 }
+
+
+void randomPerturbationTest(){
+    
+    delimiter='\t';
+    option=randPert; // set the random option
+    c=1.01;
+    attempt=1;
+    epsilon=0.0001;
+    noise=0.01;
+    k=100;
+    
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
+    string testFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/testUncertainGraph.txt";
+    string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/ruv_dblp.txt";
+    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob.txt";
+    UncertainGraph ug=init_uncertain_from_file(filepath);
+    
+    long int nv=ug.nv;
+    
+    igraph_vector_t ak;
+    igraph_real_t eps_res,sigma;
+    igraph_vector_init(&ak,nv);
+    ug.getDegrees(false, &ak);
+    
+    sigma=0.01;
+
+    
+    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+    
+    tpg.print_graph(obFilePath);
+    
+    
+
+    igraph_vector_destroy(&ak);
+    
+
+}
+
+void generateReliablity(){
+    
+    delimiter='\t';
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob.txt";
+    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/rand_dblp_ob_rel.txt";
+    UncertainGraph uobg=init_uncertain_from_file(filepath);
+    
+    long int nv=uobg.nv;
+    
+    igraph_vector_t rv;
+    igraph_vector_init(&rv, nv);
+    sampleNum=2000;
+    uobg.reliablity(&rv, relPath);
+    
+    igraph_vector_destroy(&rv);
+
+}
+
 
 
 
@@ -158,6 +250,10 @@ int main(){
    // graphCastTest();
     //reliablityComparision();
     //testObfuscation();
-    reliablityUtiltyTest();
+//    reliablityUtiltyTest();
+ //   randomPerturbationTest();
+    
+    generateReliablity();
+    
     return 0;
 }

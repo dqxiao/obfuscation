@@ -19,8 +19,8 @@ public:
     igraph_t graph;
     long nv;
     long ne;
-protected:
     igraph_vector_t pe;
+protected:
     void degreeDistribution(igraph_vector_t * res, igraph_real_t maxDegree); // used for sigmaUniquess cal
     
 public:
@@ -38,7 +38,10 @@ public:
     void graphStastic(void); // basic graph statistics; linear function
     
     
-    
+    double diffconectPairAddEdge(double from, double to);
+    void reliablityUtiitySubgraphCall(igraph_vector_t *ruv);
+    void reliablityUtilitySubgraph(igraph_vector_t *ruv);
+    void maxConnectedConponent(igraph_vector_t * re_edges, igraph_vector_t * re_pe, igraph_vector_t * startPos,long int * cnum);
     void reliablityUtiliy(igraph_vector_t * ruv); // used for uncertain graph to cal
     void reliablity(igraph_vector_t * res); // used for uncertain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
@@ -48,15 +51,21 @@ public:
     
     void sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma);
     UncertainGraph generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); // used for uncertain graph
+
+    UncertainGraph randomGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);
+    
     UncertainGraph obfuscation(igraph_vector_t *ak); // used for uncertain graph obfuscation
 
+   
+    
+    
     
     UncertainGraph fixEdgeGraph(long int index,double val); // generate remove Graph via something subset
     UncertainGraph sampleGraph(igraph_vector_t * indicator); // generate sample graph with indicator
     UncertainGraph sampleGraph(void); // generate sample graph
     void print_graph(string filepath); // print graph to file
     
-    
+    void rawEstimate(igraph_vector_t * r_edge);
 };
 
 

@@ -93,6 +93,11 @@ void Graph::metric(igraph_vector_t *res,double p){
     igraph_vector_destroy(&degrees);
 }
 
+void Graph::degrees(igraph_vector_t * degRes){
+    igraph_degree(&graph, degRes, igraph_vss_all(), IGRAPH_ALL, true);
+    // done 
+}
+
 
 igraph_real_t Graph::connectedVPairs(void){
     igraph_vector_t edges;
@@ -127,6 +132,9 @@ igraph_real_t Graph::connectedVPairs(void){
         long int rep=ds.find_set(i);
         ++c_component[rep];
     }
+    //
+//    cout<<"connected componet:"<<c_component.size()<<endl;
+    
     
     for(auto entry: c_component){
         nVpairs+=permuateCal(entry.second);
@@ -136,6 +144,79 @@ igraph_real_t Graph::connectedVPairs(void){
     igraph_vector_destroy(&edges);
     return nVpairs;
 }
+
+
+
+
+double Graph::diffconectPairAddEdge(double nFrom, double nTo){
+    
+    igraph_vector_t edges;
+    std::map<long int, long int> c_component;
+    
+    double diff=0;
+    
+    
+    
+    igraph_vector_init(&edges,2*ne);
+    
+    igraph_get_edgelist(&graph, &edges, false);
+    vector<long int> rank (nv);
+    vector<long int> parent(nv);
+    
+    for(int i=0;i<nv;i++){
+        rank[i]=i;
+        parent[i]=i;
+    }
+    
+    boost::disjoint_sets<long int *, long int * > ds(&rank[0],&parent[0]);
+    
+    // link via each edge
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(edges)[2*i];
+        long int to=VECTOR(edges)[2*i+1];
+        ds.union_set(from,to);
+    }
+    
+   
+    
+    long int nFromRep=ds.find_set(nFrom);
+    long int nToRep=ds.find_set(nTo);
+    
+    if(nFromRep==nToRep){
+        return 0;
+    }else{
+        
+        // diff cluster
+            for(long int i=0;i<nv;i++){
+                long int rep=ds.find_set(i);
+                ++c_component[rep];
+            }
+        
+        
+        long int nFromNum=c_component[nFromRep];
+        long int nToNum=c_component[nToRep];
+        
+        
+        //return 2*nFromNum*nToNum;
+        
+        diff=2*nFromNum*nToNum;
+
+    }
+    
+    
+    
+    
+    
+
+    
+    
+    
+    return diff;
+ 
+}
+
+
+
 
 void Graph::reliablity(igraph_vector_t *res, double p){
     
@@ -175,7 +256,6 @@ void Graph::reliablity(igraph_vector_t *res, double p){
     for(long int i=0;i<nv;i++){
         double inc=VECTOR(c_component)[(int)(VECTOR(v_component)[i])]-1;
         inc*=p;
-        inc/=nv-1;
         igraph_vector_set(res,i,VECTOR(*res)[i]+inc);
     }
 

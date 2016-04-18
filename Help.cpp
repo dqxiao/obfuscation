@@ -120,9 +120,12 @@ void vector_statstic(igraph_vector_t *input){
     
     cout<<"basic stastic for this vector"<<endl;
     cout<<"max"<<"\t"<<"min"<<"\t"<<"mean"<<endl;
+    
     cout<<max<<"\t"<<min<<"\t"<<mean<<endl;
     
-    cout<<"suggested interval: "<<(max-min)/20<<endl;
+    cout<<"min get by:"<<igraph_vector_which_min(input);
+    
+    cout<<"suggested interval: "<<(max-min)/200<<endl;
     
 }
 

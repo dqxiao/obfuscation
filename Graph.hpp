@@ -35,12 +35,17 @@ public:
     long int getNE(void);
     void graphStatstic(void);
     void metric(igraph_vector_t *res, double p); // used for uncertain graph for cal AD
+    void degrees(igraph_vector_t * degRes);
     
     
-    igraph_real_t connectedVPairs(void);// used for uncertain graph for cal something
+    igraph_real_t connectedVPairs(void);// used for uncertain graph for cal, it is slower
+    
+    double diffconectPairAddEdge(double from, double to);
+ 
     
     void reliablity(igraph_vector_t * res,double p); // used for uncertain/certain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
+    
     
     void entropyReport(igraph_vector_t *res, igraph_real_t maxDegree);  // used only for certain graph, maxDegre=
     double testAgaist(igraph_vector_t * ak, int k); // test against adversary knowledge
