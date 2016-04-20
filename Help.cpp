@@ -123,7 +123,8 @@ void vector_statstic(igraph_vector_t *input){
     
     cout<<max<<"\t"<<min<<"\t"<<mean<<endl;
     
-    cout<<"min get by:"<<igraph_vector_which_min(input);
+    cout<<"min get by:"<<igraph_vector_which_min(input)<<endl;
+    cout<<"max get by:"<<igraph_vector_which_max(input)<<endl;
     
     cout<<"suggested interval: "<<(max-min)/200<<endl;
     

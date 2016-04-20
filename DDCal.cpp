@@ -55,10 +55,10 @@ void normal_cal(const igraph_vector_t * input, igraph_vector_t *res, long int de
         hval=boost::math::cdf(ns,i+0.5);
 //
         realVal=hval-lval;
-        if(realVal<100*std::numeric_limits<double>::epsilon()){
-            realVal=boost::math::pdf(ns,i-1)+boost::math::pdf(ns,i);
-            realVal/=2;
-        }
+//        if(realVal<100*std::numeric_limits<double>::epsilon()){
+//            realVal=boost::math::pdf(ns,i-1)+boost::math::pdf(ns,i);
+//            realVal/=2;
+//        }
         igraph_vector_set(res, i, realVal);
         lval=hval;
     }
@@ -146,10 +146,10 @@ double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test){
     
     for(long int i=0;i<refLen;i++){
         double mean_error=std::abs((double)VECTOR(*ref)[i]-(double)VECTOR(*test)[i]);
-        
         dis_sum+=mean_error;
     }
     
+    dis_sum/=refLen-1;
     dis_sum/=refLen;
     
     return dis_sum;

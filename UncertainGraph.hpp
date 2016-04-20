@@ -21,8 +21,8 @@ public:
     long ne;
     igraph_vector_t pe;
 protected:
-    void degreeDistribution(igraph_vector_t * res, igraph_real_t maxDegree); // used for sigmaUniquess cal
-    
+    void degreeDistribution(igraph_vector_t * res, igraph_real_t maxDegree); // used for sigmaUniquess cal, it seems wrong thought
+    void aggregateAK(igraph_vector_t * res, igraph_real_t maxDegree, igraph_vector_t * ak); // used for sigmaUniquess cal
 public:
     UncertainGraph(long nv);      // empty constructor
     UncertainGraph(const UncertainGraph & obj); // copy const constructor
@@ -46,6 +46,8 @@ public:
     void reliablity(igraph_vector_t * res); // used for uncertain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
     void getDegrees(bool expected, igraph_vector_t *res);  // used for uncertain graph to extract adversary 
+    
+    
     
     
     

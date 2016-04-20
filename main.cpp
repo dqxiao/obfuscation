@@ -80,10 +80,11 @@ void testObfuscation(){
     UncertainGraph ug=init_uncertain_from_file(inputPath+dataset+".txt");
     nv=ug.nv;
     igraph_vector_init(&ak,nv);
-    ug.getDegrees(true, &ak);
+    ug.getDegrees(false, &ak);
     UncertainGraph uog=init_uncertain_OB_from_file(obPath+method, nv);
-//    uog.testAgaist(&ak);
-    ug.testAgaist(&ak);
+    uog.testAgaist(&ak);
+    //ug.testAgaist(&ak);
+    
 }
 
 
@@ -95,20 +96,24 @@ void reliablityComparision(){
     string rep_suffix="rep_rel.txt";
     string ob_suffix="outpg_rel.txt";
     string method="GREEDY1-1";
+    string ourMethod="rand_dblp_ob_c1.1";
+    
     long int nv=824774;
     
-    igraph_vector_t inRel,repRel,outRel;
+    igraph_vector_t inRel,repRel,outRel,randRel;
     igraph_vector_init(&inRel,nv);
     igraph_vector_init(&repRel,nv);
     igraph_vector_init(&outRel,nv);
+    igraph_vector_init(&randRel,nv);
+    
     
     
     init_vector_file(&inRel, relfoler+dataset+input_suffix);
     init_vector_file(&repRel, relfoler+method+"_"+rep_suffix);
     init_vector_file(&outRel, relfoler+method+"_"+ob_suffix);
+    init_vector_file(&randRel,relfoler+ourMethod+"_"+"rel.txt");
     
-    cout<<"relative error"<<endl;
-    cout<<"inRel vs outRel : "<<cal_relative_error_vector(&inRel,&outRel)<<endl;
+    
     
     cout<<"mean error"<<endl;
     cout<<"inRel vs outRel : "<<cal_mean_error_vector(&inRel, &outRel)<<endl;
@@ -118,6 +123,17 @@ void reliablityComparision(){
     
     cout<<"mean error"<<endl;
     cout<<"repRel vs outRel : "<<cal_mean_error_vector(&repRel, &outRel)<<endl;
+    
+    
+    cout<<"mean error"<<endl;
+    
+    cout<<"inRel vs randRel : "<<cal_mean_error_vector(&inRel, &randRel)<<endl;
+    
+    
+    cout<<"mean error "<<endl;
+    cout<<"inRel vs inRel : " <<cal_mean_error_vector(&inRel, &inRel)<<endl;
+    
+    
     
 
 }
@@ -187,11 +203,14 @@ void reliablityUtiltyTest(){
 }
 
 
+
+
+
 void randomPerturbationTest(){
     
     delimiter='\t';
     option=randPert; // set the random option
-    c=1.01;
+    c=1.1;
     attempt=1;
     epsilon=0.0001;
     noise=0.01;
@@ -200,24 +219,30 @@ void randomPerturbationTest(){
     string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
     string testFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/testUncertainGraph.txt";
     string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/ruv_dblp.txt";
-    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob.txt";
+    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob_c1.1_final.txt";
+    
+    
     UncertainGraph ug=init_uncertain_from_file(filepath);
+    
+    
     
     long int nv=ug.nv;
     
     igraph_vector_t ak;
     igraph_real_t eps_res,sigma;
     igraph_vector_init(&ak,nv);
-    ug.getDegrees(false, &ak);
+    ug.getDegrees(true, &ak);
     
-    sigma=0.01;
-
+//    sigma=0.01;
+//
+//    
+//    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
     
-    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+    UncertainGraph tpg=ug.obfuscation(&ak);
     
     tpg.print_graph(obFilePath);
     
-    
+//    ug.testAgaist(&ak);
 
     igraph_vector_destroy(&ak);
     
@@ -227,8 +252,8 @@ void randomPerturbationTest(){
 void generateReliablity(){
     
     delimiter='\t';
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob.txt";
-    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/rand_dblp_ob_rel.txt";
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob_c1.1.txt";
+    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/rand_dblp_ob_c1.1_rel.txt";
     UncertainGraph uobg=init_uncertain_from_file(filepath);
     
     long int nv=uobg.nv;
@@ -248,12 +273,12 @@ void generateReliablity(){
 int main(){
    // graphTest();
    // graphCastTest();
-    //reliablityComparision();
-    //testObfuscation();
+ // reliablityComparision();
+  //  testObfuscation();
 //    reliablityUtiltyTest();
- //   randomPerturbationTest();
+    randomPerturbationTest();
     
-    generateReliablity();
+   // generateReliablity();
     
     return 0;
 }

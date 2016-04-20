@@ -99,7 +99,7 @@ void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t
     igraph_vector_copy(&edgeProbs, &pe);
     
     // iterate over all vertices
-    for(long int  i=0;i<nv;i++){
+    for(long int i=0;i<nv;i++){
         igraph_vector_t prob_v,res_v;
         igraph_vector_t eids;
         
@@ -117,7 +117,10 @@ void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t
             DDCal(&prob_v, &res_v,degree,maxDegree);
             for(long int j=0;j<min(degree,maxDegree)+1;j++){
                 igraph_real_t val=VECTOR(res_v)[j];
-                if(val<=numeric_limits<double>::epsilon()){
+//                if(val<=numeric_limits<double>::epsilon()){
+//                    continue;
+//                }
+                if(val==0){
                     continue;
                 }
                 igraph_vector_set(&s,j,VECTOR(s)[j]+VECTOR(res_v)[j]);
@@ -175,6 +178,9 @@ double UncertainGraph::testAgaist(igraph_vector_t *ak){
         double diff=theshold-VECTOR(ePResult)[(long int) val];
         if(diff>0.01){
             lessAn+=1;
+            cout<<"node degree: "<< val<<endl;
+            cout<<"diff:"<<diff<<endl;
+            cout<<"log(Y): "<<VECTOR(ePResult)[(long int) val]<<endl;
         }
     }
     cout<<lessAn<<" vertices failed to obfuscated "<<endl;
@@ -861,6 +867,11 @@ void UncertainGraph::getDegrees(bool expected, igraph_vector_t *res){
     
 }
 
+
+
+
+
+
 /**
  * iterates over nodes
  */
@@ -907,9 +918,25 @@ void UncertainGraph::degreeDistribution(igraph_vector_t *res, igraph_real_t maxD
 }
 
 
+void UncertainGraph::aggregateAK(igraph_vector_t *res, igraph_real_t maxDegree, igraph_vector_t *ak){
+    
+    //
+    for(long int i=0;i<nv;i++){
+        long int val=VECTOR(*ak)[i];
+        igraph_vector_set(res,val,VECTOR(*res)[val]+1);
+    }
+    //done
+}
+
+
+
+
+
 void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma){
     igraph_vector_t s_com,freqs;
     igraph_vector_t degrees;
+    
+    
     
     normal ns(0,sigma);
     
@@ -919,8 +946,11 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
     
     //calculate frequncy via uncertain semantic
     
-    degreeDistribution(&freqs, maxDegree);
+    //degreeDistribution(&freqs, maxDegree);
 
+    // calculate frequence directly
+    
+    aggregateAK(&freqs, maxDegree, &ak);
     
     // when sigma is very small
     // it approximate count the number of nodes with the same degree
@@ -939,6 +969,10 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
         
         igraph_vector_set(&s_com,i,1.0/val);
     }
+    
+    
+    write_vector_file(&s_com,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/s_comm_c.txt");
+    vector_statstic(&s_com);
     
     
     for(long int i=0;i<nv;i++){
@@ -1284,7 +1318,7 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     UncertainGraph tGraph((igraph_integer_t)nv);
     
     sigmaLow=0;
-    sigmaUpper=1;
+    sigmaUpper=0.01; // this is one can be claimed by coders for speeding up the execution
     
     
     while(true){
