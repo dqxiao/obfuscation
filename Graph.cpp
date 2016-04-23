@@ -215,6 +215,44 @@ double Graph::diffconectPairAddEdge(double nFrom, double nTo){
  
 }
 
+void Graph::reliablity_record(igraph_vector_t *res){
+    
+    igraph_vector_t edges;
+  
+    
+    igraph_vector_init(&edges,2*ne);
+    vector<long int> rank (nv);
+    vector<long int> parent(nv);
+ 
+    
+    igraph_get_edgelist(&graph, &edges, false);
+    for(int i=0;i<nv;i++){
+        rank[i]=i;
+        parent[i]=i;
+    }
+    
+    boost::disjoint_sets<long int *, long int * > ds(&rank[0],&parent[0]);
+    
+    // link via each edge
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(edges)[2*i];
+        long int to=VECTOR(edges)[2*i+1];
+        ds.union_set(from,to);
+    }
+    
+    //
+    for(long int i=0;i<nv;i++){
+        int rep=(int)ds.find_set(i);
+        igraph_vector_set(res,i, rep);
+    }
+    
+    rank.clear();
+    parent.clear();
+    
+    igraph_vector_destroy(&edges);
+    
+
+}
 
 
 

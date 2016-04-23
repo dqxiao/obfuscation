@@ -21,8 +21,11 @@
 #include <map>
 #include <boost/math/special_functions/round.hpp>
 #include <truncated_normal.hpp>
+#include <unordered_map>
+#include <boost/numeric/ublas/matrix.hpp>
 using boost::math::normal;
 using boost::math::iround;
+//using namespace boost::numeric::ublas;
 using namespace std;
 
 
@@ -85,18 +88,17 @@ void UncertainGraph::set_edges_probs(igraph_vector_t *probs){
 
 void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t maxDegree){
     
-    igraph_vector_t degs, edgeProbs,s, s_entropy;
+    igraph_vector_t degs,s, s_entropy;
     igraph_real_t degree;
     
     
     igraph_vector_init(&degs, nv);
     igraph_degree(&graph, &degs, igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
-    igraph_vector_init(&edgeProbs, ne);
     igraph_vector_init(&s,maxDegree+1);
     igraph_vector_init(&s_entropy,maxDegree+1);
     
     
-    igraph_vector_copy(&edgeProbs, &pe);
+    //igraph_vector_copy(&edgeProbs, &pe);
     
     // iterate over all vertices
     for(long int i=0;i<nv;i++){
@@ -112,7 +114,7 @@ void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t
         if(degree!=0){
             for(long int j=0;j<degree;j++){
                 long int eid=VECTOR(eids)[j];
-                igraph_vector_set(&prob_v, j, VECTOR(edgeProbs)[eid]);
+                igraph_vector_set(&prob_v, j, VECTOR(pe)[eid]);
             }
             DDCal(&prob_v, &res_v,degree,maxDegree);
             for(long int j=0;j<min(degree,maxDegree)+1;j++){
@@ -132,7 +134,7 @@ void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t
             igraph_vector_set(&s,0,1+VECTOR(res_v)[0]);
         }
         
-        if(i%10000==0){
+        if(i%400000==0){
             cout<<"move"<<i<<endl;
         }
         
@@ -153,7 +155,6 @@ void UncertainGraph::entropyReport(igraph_vector_t * entropyReport,igraph_real_t
     }
     //
     igraph_vector_destroy(&degs);
-    igraph_vector_destroy(&edgeProbs);
     igraph_vector_destroy(&s);
     igraph_vector_destroy(&s_entropy);
     
@@ -168,7 +169,7 @@ double UncertainGraph::testAgaist(igraph_vector_t *ak){
     
     maxDegree=igraph_vector_max(ak);
     igraph_vector_init(&ePResult, maxDegree+1);
-    cout<<"cal entropy "<<endl;
+    cout<<"cal entropy, it takes a while ~10 mins "<<endl;
     entropyReport(&ePResult,maxDegree);
     cout<<"end entropy computation"<<endl;
     
@@ -178,9 +179,9 @@ double UncertainGraph::testAgaist(igraph_vector_t *ak){
         double diff=theshold-VECTOR(ePResult)[(long int) val];
         if(diff>0.01){
             lessAn+=1;
-            cout<<"node degree: "<< val<<endl;
-            cout<<"diff:"<<diff<<endl;
-            cout<<"log(Y): "<<VECTOR(ePResult)[(long int) val]<<endl;
+            //cout<<"node degree: "<< val<<endl;
+            //cout<<"diff:"<<diff<<endl;
+            //cout<<"log(Y): "<<VECTOR(ePResult)[(long int) val]<<endl;
         }
     }
     cout<<lessAn<<" vertices failed to obfuscated "<<endl;
@@ -197,7 +198,7 @@ void UncertainGraph::graphStastic(){
     cout<<"uncertain statstic"<<endl;
     cout<<"|V|:"<<nv<<endl;
     cout<<"|E|:"<<ne<<endl;
-    cout<<"|E|/|V|:"<<ne/nv<<endl;
+    cout<<"|E|/|V|:"<<2*(double)ne/nv<<endl;
     cout<<"edge probabiblity (mean):"<<edgePSum/ne<<endl;
     cout<<"exp degree (mean):"<<edgePSum*2/nv<<endl;
 }
@@ -321,14 +322,6 @@ void UncertainGraph::maxConnectedConponent(igraph_vector_t * re_edges, igraph_ve
     igraph_vector_init(&edges,2*ne);
     igraph_get_edgelist(&graph, &edges, false);
     igraph_vector_init(&v_rep,nv);
-    
-
-   
-    
-    
-   
-    
-    
     
     vector<long int> rank (nv);
     vector<long int> parent(nv);
@@ -834,6 +827,38 @@ void UncertainGraph::reliablity(igraph_vector_t * res, string filepath){
     write_vector_file(res, filepath);
 }
 
+void UncertainGraph::reliablity_record(long int csampleNum, string filepath){
+    
+    // vector to string
+    
+  
+    boost::numeric::ublas::matrix<int> m (nv,csampleNum); //
+    
+    for(long int i=0;i<csampleNum;i++){
+        cout<<i<<"sample Graph for reliablity record" <<endl;
+        
+        UncertainGraph sg=sampleGraph();
+        Graph g(sg);
+        igraph_vector_t sc;
+        igraph_vector_init(&sc,nv);
+        g.reliablity_record(&sc);
+        
+        for(long int index=0;index<nv;index++){
+            m(index,i)=VECTOR(sc)[index];
+        }
+        
+        
+        igraph_vector_destroy(&sc);
+        
+    }
+    
+    write_boostMatrix_file(m, filepath); //
+    
+    m.clear(); //clear
+  
+}
+
+
 void UncertainGraph::getDegrees(bool expected, igraph_vector_t *res){
     igraph_vector_t degrees;
     igraph_vector_init(&degrees,nv);
@@ -860,6 +885,8 @@ void UncertainGraph::getDegrees(bool expected, igraph_vector_t *res){
             int val=iround(VECTOR(degrees)[i]);
             igraph_vector_set(res,i,val);
         }
+        
+        igraph_vector_destroy(&edges);
     }
     
     igraph_vector_destroy(&degrees);
@@ -971,8 +998,8 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
     }
     
     
-    write_vector_file(&s_com,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/s_comm_c.txt");
-    vector_statstic(&s_com);
+   // write_vector_file(&s_com,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/s_comm_c.txt");
+    //vector_statstic(&s_com);
     
     
     for(long int i=0;i<nv;i++){
@@ -994,7 +1021,7 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     igraph_real_t epsilonStart,maxDegree;
     igraph_vector_t degrees,uv,eids;
     
-    igraph_matrix_t  EIndicator;
+   
     vector<double> lowNodes;
     vector<int> edgeShuffle;
     vector<Node_UN> nodeUNs;
@@ -1042,26 +1069,26 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     printf("number of vertices:%li \n",nv);
     
     
-    igraph_matrix_init(&EIndicator,nv,nv);
+  
     igraph_vector_init(&eids, 0);
     igraph_get_edgelist(&graph, &eids, false);
     
     
+    unordered_map<Edge, double>EIndicator;
     
-    /*init E indicator matrix with p_e*/
     for(long int i=0;i<ne;i++){
         long int from=VECTOR(eids)[2*i];
         long int to=VECTOR(eids)[2*i+1];
         double p_e=VECTOR(pe)[i];
+        
         if(from>to){
             swap(from,to);
         }
-        
-        if(from==to){
-            throw std::exception();
-        }
-        igraph_matrix_set(&EIndicator, from, to, p_e);
+        // use this one as matrix
+        EIndicator[Edge(from,to)]=p_e;
     }
+
+    
     
     
     
@@ -1070,10 +1097,12 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     for(int tn=0;tn<attempt;tn++){
         
         long int ce=lround(c*ne);
-        igraph_vector_t EC,ue,pe;
+        igraph_vector_t EC,ue,tpe; // just for temporary uncertain graph
         long int k=0;
         long count=ne;
-        igraph_matrix_t ECIndicator;
+       
+        
+        
         igraph_real_t ueSum,sigma_Sum;
         ueSum=0;
         sigma_Sum=0;
@@ -1082,23 +1111,20 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
         
         std::mt19937 gen(rd());
         
-        
-        // initiate EC
+
         igraph_vector_init(&EC, 2*ce);
-        igraph_matrix_init(&ECIndicator, nv, nv);
         
-        
-        
+        unordered_map<Edge, double> ECIndicator;
         for(long int i=0;i<ne;i++){
             long int from=VECTOR(eids)[2*i];
             long int to=VECTOR(eids)[2*i+1];
+        
             if(from>to){
                 swap(from,to);
             }
-            igraph_matrix_set(&ECIndicator,from,to,1);
+            ECIndicator[Edge(from,to)]=1;
         }
-        
-        
+//
         
         printf("iteration %d\n",tn);
         printf("select %li edges from %li nodes \n", ce,nv-skip_count);
@@ -1119,28 +1145,72 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
             }
             
             double pickP=unDist(gen);
+//
             
-            if(MATRIX(EIndicator,u,v)>pickP){
-              
+            
+//            if(MATRIX(EIndicator,u,v)>pickP){
+//              
+//                
+//                // remove Edge from EC
+//                if(MATRIX(ECIndicator, u, v)==1){
+//                    count-=1;
+//                    igraph_matrix_set(&ECIndicator,u,v,0);
+//                }
+//                
+//            }else{
+//                
+//                // add Edge into EC
+//                if(MATRIX(ECIndicator, u, v)==0 && MATRIX(EIndicator, u, v)==0){
+//                    igraph_vector_set(&EC, k++,u);
+//                    igraph_vector_set(&EC, k++,v);
+//                    
+//                    count+=1;
+//                    igraph_matrix_set(&ECIndicator,u,v,1);
+//                }
+//                
+//            }
+            
+            
+          
+            
+           
+            
+            double p_uv=0;
+            
+            auto search=EIndicator.find(Edge(u,v));
+            if(search!=EIndicator.end()){
+                p_uv=search->second;
+            }
+            
+            
+            int existEC=0;
+            auto ecSearch=ECIndicator.find(Edge(u,v));
+            
+            if(ecSearch!=ECIndicator.end()){
+                existEC=ecSearch->second;
+            }
+            if(p_uv>pickP){
                 
-                // remove Edge from EC
-                if(MATRIX(ECIndicator, u, v)==1){
+                
+                
+                if(existEC==1){
                     count-=1;
-                    igraph_matrix_set(&ECIndicator,u,v,0);
+                    ecSearch->second=0;
                 }
-                
             }else{
-                
-                // add Edge into EC
-                if(MATRIX(ECIndicator, u, v)==0 && MATRIX(EIndicator, u, v)==0){
+                if(existEC==0 && p_uv==0){
                     igraph_vector_set(&EC, k++,u);
                     igraph_vector_set(&EC, k++,v);
-                    
+
                     count+=1;
-                    igraph_matrix_set(&ECIndicator,u,v,1);
+                    
+                    if(ecSearch!=ECIndicator.end()){
+                        ecSearch->second=1;
+                    }
                 }
-                
+
             }
+            
             
             if(count==ce){
                 break;
@@ -1150,14 +1220,22 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
         
         long int exist=0;
         
-        for(long int i=0;i<2*ne;i+=2){
-            long int from=VECTOR(eids)[i];
-            long int to=VECTOR(eids)[i+1];
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(eids)[2*i];
+            long int to=VECTOR(eids)[2*i+1];
             if(from>to){
                 swap(from,to);
             }
             
-            if(MATRIX(ECIndicator,from,to)==1){
+            int existEC=0;
+            auto ecSearch=ECIndicator.find(Edge(from,to));
+            
+            if(ecSearch!=ECIndicator.end()){
+                existEC=ecSearch->second;
+            }
+
+            
+            if(existEC==1){
                 igraph_vector_set(&EC, k++, from);
                 igraph_vector_set(&EC, k++, to);
                 exist+=1;
@@ -1180,19 +1258,19 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
         
         
         igraph_vector_init(&ue,ce);
-        igraph_vector_init(&pe,ce);
+        igraph_vector_init(&tpe,ce);
         
         
         
         
         
-        for(long int i=0;i<2*ce;i+=2){
+        for(long int i=0;i<ce;i++){
             igraph_real_t eVal=0;
-            eVal+=VECTOR(uv)[int(VECTOR(EC)[i])];
-            eVal+=VECTOR(uv)[int(VECTOR(EC)[i+1])];
+            eVal+=VECTOR(uv)[int(VECTOR(EC)[2*i])];
+            eVal+=VECTOR(uv)[int(VECTOR(EC)[2*i+1])];
             eVal/=2;
             ueSum+=eVal;
-            igraph_vector_set(&ue,i/2,eVal);
+            igraph_vector_set(&ue,i,eVal);
         }
         
         
@@ -1226,22 +1304,27 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
                 swap(from,to);
             }
             
-            double old_p_e=MATRIX(EIndicator,from,to);
+            //
+            double old_p_e=0;
+            
+            auto search=EIndicator.find(Edge(from,to));
+            if(search!=EIndicator.end()){
+                old_p_e=search->second;
+            }
+            
             
             if(w<noise){
                 re=unGenDist(sgen);
                 unCount+=1;
                 re*=(2*(0.5-old_p_e));
             }else{
-                re=truncated_normal_ab_sample(0.0, sqrt((double) sigma_e), 0.0, 1.0, seed);
-                // re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
-                
+                re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
                 re*=(2*(0.5-old_p_e));
                 
             }
             
             // generate the solution
-            igraph_vector_set(&pe,i,old_p_e+re);
+            igraph_vector_set(&tpe,i,old_p_e+re);
             
     
             reSum+=re;
@@ -1254,19 +1337,20 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
         
         printf("inject uncertainty over white noise %f \n", (double)unCount/ce);
         
-        printf("sum of edge :%f \n", igraph_vector_sum(&pe));
+        printf("sum of edge :%f \n", igraph_vector_sum(&tpe));
         
         printf("average of sigme %f \n",sigma_Sum/ce);
         
         printf("init edge and probs \n");
         UncertainGraph pGraph((igraph_integer_t)nv);
         pGraph.set_edges(&EC);
-        pGraph.set_edges_probs(&pe);
+        pGraph.set_edges_probs(&tpe);
         
         igraph_vector_destroy(&ue);
-        igraph_vector_destroy(&pe);
+        igraph_vector_destroy(&tpe);
         igraph_vector_destroy(&EC);
-        igraph_matrix_destroy(&ECIndicator);
+        ECIndicator.clear();
+        
         double epsilon_G=pGraph.testAgaist(ak);
         
         if(epsilon_G<epsilonStart){
@@ -1276,14 +1360,20 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
         }
         
         cout<<"finish "<<tn<<" attempt" <<endl;
+        
+        
     }
     
     
     
     //igraph_vector_destroy(&cuv);
+    EIndicator.clear();
     igraph_vector_destroy(&degrees);
     igraph_vector_destroy(&uv);
-    igraph_matrix_destroy(&EIndicator);
+    igraph_vector_destroy(&eids);
+    lowNodes.clear();
+    edgeShuffle.clear();
+    nodeUNs.clear();
     
     
     *eps_res=epsilonStart;
@@ -1317,8 +1407,8 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     
     UncertainGraph tGraph((igraph_integer_t)nv);
     
-    sigmaLow=0;
-    sigmaUpper=0.01; // this is one can be claimed by coders for speeding up the execution
+    sigmaLow=0.0001;
+    sigmaUpper=0.1; // this is one can be claimed by coders for speeding up the execution
     
     
     while(true){
@@ -1336,9 +1426,11 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
         
     }
     
-    while(true){
+    while((sigmaUpper-sigmaLow)<0.00001 ){
         cout<<"random search for sigmaUpper="<<sigmaUpper<<endl;
+        sigmaLow=sigmaUpper/2; // the last one failed
         igraph_real_t sigma=(sigmaUpper+sigmaLow)/2;
+        ep_res=1;
         UncertainGraph pGraph=generateObfuscation(sigmaUpper, &ep_res, ak);
         if(ep_res>=epsilon){
             sigmaLow=sigma;
@@ -1348,9 +1440,6 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
             tEpsilion=ep_res;
         }
         
-        if((sigmaUpper-sigmaLow)<0.0001){
-            break;
-        }
         
         
         

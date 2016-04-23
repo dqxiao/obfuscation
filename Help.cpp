@@ -88,6 +88,37 @@ void write_vector_file(igraph_vector_t *res, string filePath){
     cout<<"write"<<nv<<"line"<<endl;
 }
 
+// pass by reference 
+void write_boostMatrix_file(boost::numeric::ublas::matrix<int>&m, string filePath){
+    ofstream myfile(filePath);
+   // long int nv=igraph_vector_size(res);
+    if(!myfile.is_open()){cout<<"can not open file"<<filePath<<endl;}
+    
+    int nrow=(int)m.size1();
+    int ncol=(int)m.size2();
+    
+    for(int i=0;i<nrow;i++){
+        for(int j=0;j<ncol;j++){
+            if(j==0){
+                myfile<<m(i,j);
+            }else{
+                myfile<<'\t'<<m(i,j);
+            }
+            
+        }
+        myfile<<endl;
+    }
+    myfile.close();
+}
+
+
+
+
+
+
+
+
+
 void init_vector_file(igraph_vector_t *res, string filePath){
     
     ifstream myfile(filePath);
@@ -106,6 +137,29 @@ void init_vector_file(igraph_vector_t *res, string filePath){
         igraph_vector_set(res,i, stod(line));
     }
 }
+
+
+void init_boostMatrix_file(boost::numeric::ublas::matrix<int> &m, string filepath){
+    ifstream myfile(filepath);
+    
+    string line;
+    string item;
+    
+    
+    if(!myfile.is_open()){
+        cout<<"can not open "<<filepath<<endl;
+        exit(0);
+    }
+    
+    
+    
+    
+   
+    
+    
+}
+
+
 
 // just for debugging purpose
 void vector_statstic(igraph_vector_t *input){

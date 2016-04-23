@@ -45,6 +45,7 @@ public:
     void reliablityUtiliy(igraph_vector_t * ruv); // used for uncertain graph to cal
     void reliablity(igraph_vector_t * res); // used for uncertain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
+    void reliablity_record(long int sampleNum, string filePath);   // used for record relaiblity intermediate matrix =sample*nv
     void getDegrees(bool expected, igraph_vector_t *res);  // used for uncertain graph to extract adversary 
     
     

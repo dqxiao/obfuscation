@@ -55,10 +55,10 @@ void normal_cal(const igraph_vector_t * input, igraph_vector_t *res, long int de
         hval=boost::math::cdf(ns,i+0.5);
 //
         realVal=hval-lval;
-//        if(realVal<100*std::numeric_limits<double>::epsilon()){
-//            realVal=boost::math::pdf(ns,i-1)+boost::math::pdf(ns,i);
-//            realVal/=2;
-//        }
+        if(realVal<100*std::numeric_limits<double>::epsilon()){
+            realVal=boost::math::pdf(ns,i-1)+boost::math::pdf(ns,i);
+            realVal/=2;
+        }
         igraph_vector_set(res, i, realVal);
         lval=hval;
     }
@@ -156,13 +156,33 @@ double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test){
 }
 
 
-double cal_relative_error_vector(igraph_vector_t * one, igraph_vector_t * second){
-    double dis_sum=cal_distance_vector(one, second);
+double cal_relative_error_vector(igraph_vector_t * ref, igraph_vector_t * test){
+//    double dis_sum=cal_distance_vector(one, second);
+//    
+//    double val=igraph_vector_sum(one);
+//    
+//    
+//    return dis_sum/val;
     
-    double val=igraph_vector_sum(one);
+    double relError=0.0;
     
+    long int refLen=igraph_vector_size(ref);
+    long int testLen=igraph_vector_size(test);
     
-    return dis_sum/val;
+    if(refLen!=testLen){
+        throw std::exception();
+    }
+    
+    for(long int i=0;i<refLen;i++){
+        double mean_error=std::abs((double)VECTOR(*ref)[i]-(double)VECTOR(*test)[i]);
+        
+        double rel_error=mean_error/std::max((double)VECTOR(*ref)[i], (double)VECTOR(*test)[i]);
+        
+        relError+=rel_error;
+        
+    }
+    
+    return relError/refLen;
     
 }
 
@@ -170,6 +190,20 @@ double cal_relative_error_vector(igraph_vector_t * one, igraph_vector_t * second
 
 long int permuateCal(long int number){
     return number*(number-1);
+}
+
+
+void is_sparese(igraph_vector_t * input, long int nv){
+    
+    long int sum=0;
+    for(long int i=0;i<nv;i++){
+        sum+=VECTOR(*input)[i];
+    }
+    
+    //
+    printf("average:%f \n", (double)sum/(nv*(nv-1)) );
+    
+    
 }
 
 

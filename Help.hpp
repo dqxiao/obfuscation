@@ -13,6 +13,10 @@
 #include <igraph.h>
 #include <string>
 #include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <map>
+#include <boost/numeric/ublas/matrix.hpp>
 using namespace std;
 
 // just for debugging 
@@ -100,11 +104,31 @@ public:
     };
 };
 
+typedef std::pair<long int, long int>  Edge;
+
+namespace std {
+    template <>
+    struct hash<Edge> {
+        size_t operator()(const Edge &m) const {
+            // hash method here.
+            return hash<int>()(m.first) ^ hash<int> ()(m.second);
+        }
+    };
+}
+
+
+
+
+
+
 
 
 //vector file I.O
 void write_vector_file(igraph_vector_t *res, string filePath);
+void write_boostMatrix_file(boost::numeric::ublas::matrix<int> &m, string filepath);
+
 void init_vector_file(igraph_vector_t *res, string filePath);
+void init_boostMatrix_file(boost::numeric::ublas::matrix<int> &m, string filepath); // load everything into memory guess how much it needed..
 void vector_statstic(igraph_vector_t *input);
 
 #endif /* Help_hpp */

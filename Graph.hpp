@@ -42,7 +42,7 @@ public:
     
     double diffconectPairAddEdge(double from, double to);
  
-    
+    void reliablity_record(igraph_vector_t * res); // used for uncertain graph for cal reliablity
     void reliablity(igraph_vector_t * res,double p); // used for uncertain/certain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
     

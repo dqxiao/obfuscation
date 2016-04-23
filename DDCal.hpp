@@ -32,4 +32,6 @@ double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test);
 
 long int permuateCal(long int number); 
 
+
+void is_sparese(igraph_vector_t * input, long int nv);
 #endif /* DDCal_hpp */

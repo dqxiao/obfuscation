@@ -27,22 +27,7 @@ char delimiter;
 int sampleNum;
 Option option;
 
-void graphCastTest(){
-    delimiter='\t';
-    string filepath="/Users/dongqingxiao/pythonEx/probGraph/exampleProbGraph.txt";
-    UncertainGraph ug=init_uncertain_from_file(filepath);
-    
-    Graph g(ug);
-    g.graphStatstic();
-    ug.graphStastic();
-    igraph_vector_t degs;
-    igraph_vector_init(&degs,4);
-    //ug.getDegrees(true, &degs);
-    //print_vector(&degs, "expected degree");
-    
-    
-    
-}
+
 
 void graphTest(){
     // test baisc function about certain class
@@ -61,7 +46,6 @@ void graphTest(){
     igraph_real_t eps_res;
     UncertainGraph tpg=g.generateObfuscation(0.01, &eps_res);
 }
-
 
 void testObfuscation(){
     k=100;
@@ -87,7 +71,6 @@ void testObfuscation(){
     
 }
 
-
 void reliablityComparision(){
     
     string relfoler="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/";
@@ -109,37 +92,52 @@ void reliablityComparision(){
     
     
     init_vector_file(&inRel, relfoler+dataset+input_suffix);
-    init_vector_file(&repRel, relfoler+method+"_"+rep_suffix);
+    init_vector_file(&repRel, relfoler+method+"_"+"s2000_"+rep_suffix);
     init_vector_file(&outRel, relfoler+method+"_"+ob_suffix);
     init_vector_file(&randRel,relfoler+ourMethod+"_"+"rel.txt");
     
     
     
-    cout<<"mean error"<<endl;
-    cout<<"inRel vs outRel : "<<cal_mean_error_vector(&inRel, &outRel)<<endl;
+//    cout<<"mean error"<<endl;
+//    cout<<"inRel vs outRel : "<<cal_mean_error_vector(&inRel, &outRel)<<endl;
+//    
+//    cout<<"mean error"<<endl;
+//    cout<<"inRel vs repRel : "<<cal_mean_error_vector(&inRel, &repRel)<<endl;
+//    
+//    cout<<"mean error"<<endl;
+//    cout<<"repRel vs outRel : "<<cal_mean_error_vector(&repRel, &outRel)<<endl;
+//    
+//    
+//    cout<<"mean error"<<endl;
+//    
+//    cout<<"inRel vs randRel : "<<cal_mean_error_vector(&inRel, &randRel)<<endl;
+    
+    cout<<"sparse"<<endl;
+    
+    is_sparese(&inRel, nv);
+ 
+    
+    
+    cout<<"mean relative Error"<<endl;
+    
+    cout<<"inRel vs randRel : "<<cal_relative_error_vector(&inRel, &randRel)<<endl;
+    
     
     cout<<"mean error"<<endl;
-    cout<<"inRel vs repRel : "<<cal_mean_error_vector(&inRel, &repRel)<<endl;
+    cout<<"inRel vs outRel : "<<cal_relative_error_vector(&inRel, &outRel)<<endl;
     
     cout<<"mean error"<<endl;
-    cout<<"repRel vs outRel : "<<cal_mean_error_vector(&repRel, &outRel)<<endl;
+    cout<<"inRel vs repRel : "<<cal_relative_error_vector(&inRel, &repRel)<<endl;
+    
+    cout<<"mean error"<<endl;
+    cout<<"repRel vs outRel : "<<cal_relative_error_vector(&repRel, &outRel)<<endl;
     
     
     cout<<"mean error"<<endl;
     
     cout<<"inRel vs randRel : "<<cal_mean_error_vector(&inRel, &randRel)<<endl;
-    
-    
-    cout<<"mean error "<<endl;
-    cout<<"inRel vs inRel : " <<cal_mean_error_vector(&inRel, &inRel)<<endl;
-    
-    
-    
 
 }
-
-
-
 
 void reliablityUtiltyTest(){
     // uncertain graph
@@ -202,24 +200,22 @@ void reliablityUtiltyTest(){
     
 }
 
-
-
-
-
 void randomPerturbationTest(){
     
     delimiter='\t';
     option=randPert; // set the random option
-    c=1.1;
+    c=1.3;
     attempt=1;
     epsilon=0.0001;
     noise=0.01;
-    k=100;
+    k=200;
     
     string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
     string testFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/testUncertainGraph.txt";
     string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/ruv_dblp.txt";
-    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob_c1.1_final.txt";
+    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob";
+    
+    string ssufix="_c"+to_string(c)+"_k"+to_string(k)+".txt" ;// setting suffix ;
     
     
     UncertainGraph ug=init_uncertain_from_file(filepath);
@@ -233,14 +229,14 @@ void randomPerturbationTest(){
     igraph_vector_init(&ak,nv);
     ug.getDegrees(true, &ak);
     
-//    sigma=0.01;
+    sigma=1;
 //
 //    
-//    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
     
-    UncertainGraph tpg=ug.obfuscation(&ak);
+  // UncertainGraph tpg=ug.obfuscation(&ak);
     
-    tpg.print_graph(obFilePath);
+   tpg.print_graph(obFilePath+ssufix);
     
 //    ug.testAgaist(&ak);
 
@@ -252,8 +248,8 @@ void randomPerturbationTest(){
 void generateReliablity(){
     
     delimiter='\t';
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob_c1.1.txt";
-    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/rand_dblp_ob_c1.1_rel.txt";
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob_c1.300000_k200.txt";
+    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/rand_dblp_ob_c1.300000_k200_rel.txt";
     UncertainGraph uobg=init_uncertain_from_file(filepath);
     
     long int nv=uobg.nv;
@@ -267,18 +263,60 @@ void generateReliablity(){
 
 }
 
+void generateInReliablity(){
+    
+    delimiter='\t';
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
+    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relInOutput/dblp/dblp_s2000.txt";
+    UncertainGraph uobg=init_uncertain_from_file(filepath);
+    
+    long int cSampleNum=2000;
+    uobg.reliablity_record(cSampleNum, relPath);
+    
+    
+}
 
+void basic_metric(){
+    delimiter='\t';
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/";
+    string dataset="dblp";
+    
+    UncertainGraph ug=init_uncertain_from_file(filepath+dataset+".txt");
+    
+    ug.graphStastic();
+    
+}
+
+//
+void exact_reliablityComparision(){
+    long int nv=824774;
+    
+    for(long int i=0;i<nv;i++){
+        for(long int j=i+1;j<nv;j++){
+            for(int k=0;k<2;k++){
+                //
+            }
+        }
+        
+        if(i%1000==0){
+            cout<<"move"<<i<<endl;
+        }
+    }
+}
 
 
 int main(){
    // graphTest();
    // graphCastTest();
- // reliablityComparision();
-  //  testObfuscation();
+  //  reliablityComparision();
+ //   testObfuscation();
 //    reliablityUtiltyTest();
-    randomPerturbationTest();
+   // randomPerturbationTest();
     
-   // generateReliablity();
+    //generateReliablity();
+    //generateInReliablity();
     
+   // basic_metric();
+   // exact_reliablityComparision();
     return 0;
 }
