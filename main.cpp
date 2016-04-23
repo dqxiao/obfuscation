@@ -287,21 +287,61 @@ void basic_metric(){
     
 }
 
-//
-void exact_reliablityComparision(){
-    long int nv=824774;
+
+void exact_reliablityComparision_test(){
+    int sampleNum=3;
+    long int nv=3;
+    boost::numeric::ublas::matrix<int> mref(nv,sampleNum);
+    boost::numeric::ublas::matrix<int> mTest(nv,sampleNum);
     
-    for(long int i=0;i<nv;i++){
-        for(long int j=i+1;j<nv;j++){
-            for(int k=0;k<2;k++){
-                //
-            }
-        }
+    
+    string folder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/";
+    
+    string inDatast="relRef.txt";
+    string randDatast="refTest.txt";
+   
+    
+    init_boostMatrix_file(mref, folder+inDatast); // almost need half hour
+    init_boostMatrix_file(mTest, folder+randDatast);
+    
+    cout<<"diff:"<<compare_In_Matrix(mref,mTest)<<endl;
+    
+    mref.clear();
+    mTest.clear();
+    
+    
+    
+}
+
+void exact_reliablityComparision(){
+    int sampleNum=2000;
+    long int nv=824774;
+    boost::numeric::ublas::matrix<int> mref(nv,sampleNum);
+    
+    
+    boost::numeric::ublas::matrix<int> mTest(nv,sampleNum);
         
-        if(i%1000==0){
-            cout<<"move"<<i<<endl;
-        }
-    }
+    
+    string folder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relInOutput/dblp/";
+    
+    string inDatast="dblp_s2000.txt";
+    string ranDatast="rand_dblp_ob_c1.300000_k200_rel.txt";
+    
+    init_boostMatrix_file(mref, folder+inDatast); // almost need half hour
+    init_boostMatrix_file(mTest, folder+ranDatast);
+    
+    
+    
+    
+    cout<<"compare "<<inDatast<<" vs "<<ranDatast<<endl;
+    double diff=compare_In_Matrix(mref,mTest);
+    cout<<"diff "<<diff<<endl;
+    
+    mref.clear();
+    mTest.clear();
+    
+    
+    
 }
 
 
@@ -317,6 +357,7 @@ int main(){
     //generateInReliablity();
     
    // basic_metric();
-   // exact_reliablityComparision();
+    exact_reliablityComparision();
+    
     return 0;
 }

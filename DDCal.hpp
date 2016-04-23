@@ -34,4 +34,6 @@ long int permuateCal(long int number);
 
 
 void is_sparese(igraph_vector_t * input, long int nv);
+
+
 #endif /* DDCal_hpp */
