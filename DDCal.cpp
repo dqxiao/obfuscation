@@ -10,6 +10,7 @@
 #include <math.h>
 #include <boost/math/distributions/normal.hpp>
 #include <algorithm>
+#include "Help.hpp"
 //#include <limits.h>
 using boost::math::normal;
 
@@ -42,10 +43,25 @@ void normal_cal(const igraph_vector_t * input, igraph_vector_t *res, long int de
     igraph_real_t need;
     for(long int i=0;i<degree;i++){
         igraph_real_t p=VECTOR(*input)[i];
+        if(p>1 || p<0){
+            cout<<"p"<<p<<endl;
+            throw std::exception();
+        }
         sigma+=p*(1-p);
     }
     
+    
     sigma=sqrt(sigma);
+    
+    if(isnan(sigma) || sigma<=0){
+        //vector_statstic(input);
+        
+        throw std::exception();
+    }
+    if(isnan(mu) || mu<=0){
+         throw std::exception();
+    }
+    
     normal ns(mu,sigma);
     double lval,hval;
     double realVal;

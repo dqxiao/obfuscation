@@ -12,18 +12,19 @@
 #include <stdio.h>
 #include <igraph.h>
 #include <string>
-#include <Configuration.hpp>
-#include <UncertainGraph.hpp>
+#include "Configuration.hpp"
+#include "UncertainGraph.hpp"
 using namespace std;
 
 
 class Graph{
 protected:
-    long nv;
-    long ne;
+    
     igraph_t graph;
     
 public:
+    long nv;
+    long ne;
     Graph(long nv);      // empty constructor
     Graph(const Graph & obj); // copy const constructor
     Graph(Graph & obj); // copy constructor

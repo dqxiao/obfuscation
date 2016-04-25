@@ -69,6 +69,7 @@ public:
     void print_graph(string filepath); // print graph to file
     
     void rawEstimate(igraph_vector_t * r_edge);
+    void graphCheck();  // check input one is ok graph
 };
 
 

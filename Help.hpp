@@ -26,7 +26,7 @@ void print_sp_matrix(const igraph_spmatrix_t *m, std::string exp);
 
 void print_real_t_array(igraph_real_t * v, long int length,std::string exp);
 
-void print_map(map<int,vector<int>> m);
+void print_map(map<int,vector<int> > m);
 void print_boost_matrix(boost::numeric::ublas::matrix<int> &m);
 
 
@@ -153,13 +153,16 @@ void init_vector_file(igraph_vector_t *res, string filePath);
 void init_boostMatrix_file(boost::numeric::ublas::matrix<int> &m, string filepath); // load everything into memory guess how much it needed..
 void vector_statstic(igraph_vector_t *input);
 // for help comparsion
-void reorginsedByrow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int>> & rep, map<int, vector<int>> & repPos);
+void reorginsedByrow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int> > & rep, map<int, vector<int> > & repPos);
 
-int compareRow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int>> & rep, map<int, vector<int>> & repPos,int first,int second);  // compare two row
+int compareRow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int> > & rep, map<int, vector<int> > & repPos,int first,int second);  // compare two row
 
 int intersection_matrix_cout(boost::numeric::ublas::matrix<int> &matrix, int fstart, int fend, int sstart, int ssend, int first, int second);
 void intersection_result(vector<int> ref_f, vector<int> ref_s, vector<int> &result);
 
 double compare_In_Matrix(boost::numeric::ublas::matrix<int> &ref, boost::numeric::ublas::matrix<int> &test);
+
+
+double sampleing_compare_In_Matrix(boost::numeric::ublas::matrix<int> &ref, boost::numeric::ublas::matrix<int> &test);
 
 #endif /* Help_hpp */

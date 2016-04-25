@@ -457,7 +457,7 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
     igraph_real_t epsilonStart,maxDegree;
     igraph_vector_t degrees,uv,eids;
     
-    igraph_matrix_t  EIndicator;
+    
     vector<double> lowNodes;
     vector<int> edgeShuffle;
     vector<Node_UN> nodeUNs;
@@ -505,22 +505,30 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
     printf("number of vertices:%li \n",nv);
     
     
-    igraph_matrix_init(&EIndicator,nv,nv);
+    
     igraph_vector_init(&eids, 0);
     igraph_get_edgelist(&graph, &eids, false);
     
     
     
-    /*init E indicator matrix*/
-    for(long int i=0;i<2*ne;i+=2){
-        long int from=VECTOR(eids)[i];
-        long int to=VECTOR(eids)[i+1];
+    unordered_map<Edge, double>EIndicator;
+//    igraph_matrix_t EIndicator;
+//    igraph_matrix_init(&EIndicator,nv,nv);
+   // boost::numeric::ublas::matrix<int> EIndicator(nv,nv);
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(eids)[2*i];
+        long int to=VECTOR(eids)[2*i+1];
+ 
+        
         if(from>to){
             swap(from,to);
         }
-        igraph_matrix_set(&EIndicator, from, to, 1);
+        // use this one as matrix
+        EIndicator[Edge(from,to)]=1;
+//        igraph_matrix_set(&EIndicator, from, to, 1);
+      //  EIndicator(from,to)=1;
     }
-    
+
     
     
     
@@ -531,7 +539,7 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
         igraph_vector_t EC,ue,pe;
         long int k=0;
         long count=ne;
-        igraph_matrix_t ECIndicator;
+        
         igraph_real_t ueSum,sigma_Sum;
         ueSum=0;
         sigma_Sum=0;
@@ -543,17 +551,20 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
         
         // initiate EC
         igraph_vector_init(&EC, 2*ce);
-        igraph_matrix_init(&ECIndicator, nv, nv);
         
-        
-        
-        for(long int i=0;i<2*ne;i+=2){
-            long int from=VECTOR(eids)[i];
-            long int to=VECTOR(eids)[i+1];
+        unordered_map<Edge, double> ECIndicator;
+//        igraph_matrix_t ECIndicator;
+//        igraph_matrix_init(&ECIndicator,nv,nv);
+       // boost::numeric::ublas::matrix<int> ECIndicator(nv,nv);
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(eids)[2*i];
+            long int to=VECTOR(eids)[2*i+1];
+            
             if(from>to){
                 swap(from,to);
             }
-            igraph_matrix_set(&ECIndicator,from,to,1);
+            ECIndicator[Edge(from,to)]=1;
+           // ECIndicator(from,to)=1;
         }
         
         
@@ -576,26 +587,69 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
                 swap(u,v);
             }
             
-            if(MATRIX(EIndicator,u,v)==1){
+            
+            int exist=0;
+            
+            auto search=EIndicator.find(Edge(u,v));
+            if(search!=EIndicator.end()){
+                exist=1;
+            }
+            
+            int existEC=0;
+            auto ecSearch=ECIndicator.find(Edge(u,v));
+            
+            if(ecSearch!=ECIndicator.end()){
+                existEC=ecSearch->second;
+            }
+            
+            if(exist==1){
                 // if edge exist in G
-                if(MATRIX(ECIndicator, u, v)==1){
+                if(existEC==1){
                     count-=1;
-                    igraph_matrix_set(&ECIndicator,u,v,0);
+                    ecSearch->second=0;
+
                 }else{
                     
                 }
                 
             }else{
                 
-                if(MATRIX(ECIndicator, u, v)==0){
+                if(existEC==0){
                     igraph_vector_set(&EC, k++,u);
                     igraph_vector_set(&EC, k++,v);
                     
                     count+=1;
-                    igraph_matrix_set(&ECIndicator,u,v,1);
+                    
+                    //if(ecSearch)
+                    ECIndicator[Edge(u,v)]=1;
+                    
                 }
                 
             }
+            
+//            if(EIndicator(u,v)==1){
+//                // if edge exist in G
+//                if(ECIndicator(u,v)==1){
+//                    count-=1;
+//                    ECIndicator(u,v)=0;
+//                }else{
+//                    
+//                }
+//                
+//            }else{
+//                
+//                if(ECIndicator(u,v)==0){
+//                    igraph_vector_set(&EC, k++,u);
+//                    igraph_vector_set(&EC, k++,v);
+//                    
+//                    count+=1;
+//                   // igraph_matrix_set(&ECIndicator,u,v,1);
+//                    ECIndicator(u,v)=1;
+//                }
+//                
+//            }
+
+            
             
             if(count==ce){
                 break;
@@ -605,20 +659,35 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
         
         long int exist=0;
         
-        for(long int i=0;i<2*ne;i+=2){
-            long int from=VECTOR(eids)[i];
-            long int to=VECTOR(eids)[i+1];
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(eids)[2*i];
+            long int to=VECTOR(eids)[2*i+1];
             if(from>to){
                 swap(from,to);
             }
             
-            if(MATRIX(ECIndicator,from,to)==1){
+            int existEC=0;
+            auto ecSearch=ECIndicator.find(Edge(from,to));
+            
+            if(ecSearch!=ECIndicator.end()){
+                existEC=ecSearch->second;
+            }
+            
+            
+            if(existEC==1){
                 igraph_vector_set(&EC, k++, from);
                 igraph_vector_set(&EC, k++, to);
                 exist+=1;
             }
             
+//            if(ECIndicator(from,to)==1){
+//                igraph_vector_set(&EC, k++, from);
+//                igraph_vector_set(&EC, k++, to);
+//                exist+=1;
+//            }
         }
+        
+        
         printf("finish edge selection:%li edges \n", k);
         printf("select edge from existing edge :%li\n",exist);
         
@@ -681,12 +750,22 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
                 swap(from,to);
             }
             
-            if(MATRIX(EIndicator,from,to)==1){
-                igraph_vector_set(&pe, i, 1-re);
-            }else{
-                igraph_vector_set(&pe, i, re);
+            
+            double old_p_e=0;
+            
+            auto search=EIndicator.find(Edge(from,to));
+            if(search!=EIndicator.end()){
+                old_p_e=search->second;
             }
-            //
+            
+//            double old_p_e=EIndicator(from,to);
+            
+            if(old_p_e==0){
+                igraph_vector_set(&pe, i, re);
+            }else{
+                igraph_vector_set(&pe, i, 1-re);
+            }
+            
             reSum+=re;
         }
         
@@ -709,7 +788,11 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
         igraph_vector_destroy(&ue);
         igraph_vector_destroy(&pe);
         igraph_vector_destroy(&EC);
-        igraph_matrix_destroy(&ECIndicator);
+        ECIndicator.clear();
+        //igraph_matrix_destroy(&ECIndicator);
+        
+        pGraph.graphCheck();
+        
         double epsilon_G=pGraph.testAgaist(ak);
         
         if(epsilon_G<epsilonStart){
@@ -726,8 +809,8 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
     //igraph_vector_destroy(&cuv);
     igraph_vector_destroy(&degrees);
     igraph_vector_destroy(&uv);
-    igraph_matrix_destroy(&EIndicator);
-    
+    EIndicator.clear();
+   // igraph_matrix_destroy(&EIndicator);
     
     *eps_res=epsilonStart;
     
@@ -769,6 +852,7 @@ UncertainGraph Graph::obfuscation(igraph_vector_t * ak){
         UncertainGraph pGraph=generateObfuscation(sigmaUpper, &ep_res, ak);
         
         if(ep_res>=epsilon){
+            sigmaLow=sigmaUpper; // last one failed
             sigmaUpper*=2;
         }else{
             tGraph=pGraph;
@@ -778,21 +862,23 @@ UncertainGraph Graph::obfuscation(igraph_vector_t * ak){
         
     }
     
-    while(true){
+    double final_sigma=sigmaUpper; //
+    
+    while((sigmaUpper-sigmaLow)>0.001){
         cout<<"random search for sigmaUpper="<<sigmaUpper<<endl;
-        igraph_real_t sigma=(sigmaUpper+sigmaLow)/2;
+        ep_res=1;
+        igraph_real_t sigma_mid=(sigmaUpper+sigmaLow)/2;
         UncertainGraph pGraph=generateObfuscation(sigmaUpper, &ep_res, ak);
         if(ep_res>=epsilon){
-            sigmaLow=sigma;
+            sigmaLow=sigma_mid;
         }else{
             tGraph=pGraph;
-            sigmaUpper=sigma;
+            final_sigma=std::min(final_sigma,sigmaUpper);
+            sigmaUpper=sigma_mid;
             tEpsilion=ep_res;
         }
         
-        if((sigmaUpper-sigmaLow)<0.0001){
-            break;
-        }
+        
         
         
         
@@ -800,7 +886,7 @@ UncertainGraph Graph::obfuscation(igraph_vector_t * ak){
         
     }
     
-    cout<<"inject perturbation sigma :"<<sigmaUpper<<endl;
+    cout<<"inject perturbation sigma :"<<final_sigma<<endl;
     cout<<"tolerance level epislion:"<<tEpsilion<<endl;
     
     return tGraph;
@@ -905,6 +991,8 @@ Graph init_from_Adj_File(string filepath){
     return pg;
 
 }
+
+
 
 
 

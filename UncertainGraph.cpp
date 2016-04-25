@@ -20,7 +20,7 @@
 #include <random>
 #include <map>
 #include <boost/math/special_functions/round.hpp>
-#include <truncated_normal.hpp>
+#include "truncated_normal.hpp"
 #include <unordered_map>
 #include <boost/numeric/ublas/matrix.hpp>
 using boost::math::normal;
@@ -1036,7 +1036,9 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     
     
     printf("start the computation of the sigma-uniqueness of all V \n");
-    sigmaUniquess(&uv, *ak, maxDegree, sigma);
+    
+    double unique_sigma=0.01;
+    sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
     printf("finish the computation \n");
     
     
@@ -1145,36 +1147,8 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
             }
             
             double pickP=unDist(gen);
-//
-            
-            
-//            if(MATRIX(EIndicator,u,v)>pickP){
-//              
-//                
-//                // remove Edge from EC
-//                if(MATRIX(ECIndicator, u, v)==1){
-//                    count-=1;
-//                    igraph_matrix_set(&ECIndicator,u,v,0);
-//                }
-//                
-//            }else{
-//                
-//                // add Edge into EC
-//                if(MATRIX(ECIndicator, u, v)==0 && MATRIX(EIndicator, u, v)==0){
-//                    igraph_vector_set(&EC, k++,u);
-//                    igraph_vector_set(&EC, k++,v);
-//                    
-//                    count+=1;
-//                    igraph_matrix_set(&ECIndicator,u,v,1);
-//                }
-//                
-//            }
-            
-            
-          
-            
-           
-            
+
+        
             double p_uv=0;
             
             auto search=EIndicator.find(Edge(u,v));
@@ -1185,19 +1159,23 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
             
             int existEC=0;
             auto ecSearch=ECIndicator.find(Edge(u,v));
-            
+            // exist or not
             if(ecSearch!=ECIndicator.end()){
                 existEC=ecSearch->second;
             }
+            
             if(p_uv>pickP){
                 
                 
-                
+                // remove edge
                 if(existEC==1){
                     count-=1;
                     ecSearch->second=0;
+                }else{
                 }
             }else{
+                // add one edge
+                
                 if(existEC==0 && p_uv==0){
                     igraph_vector_set(&EC, k++,u);
                     igraph_vector_set(&EC, k++,v);
@@ -1206,6 +1184,8 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
                     
                     if(ecSearch!=ECIndicator.end()){
                         ecSearch->second=1;
+                    }else{
+                        ECIndicator[Edge(u,v)]=1;
                     }
                 }
 
@@ -1318,13 +1298,18 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
                 unCount+=1;
                 re*=(2*(0.5-old_p_e));
             }else{
-                re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
+                re=truncated_normal_ab_sample(0.0, sigma_e, 0.0, 1.0, seed);
                 re*=(2*(0.5-old_p_e));
                 
             }
             
             // generate the solution
-            igraph_vector_set(&tpe,i,old_p_e+re);
+            old_p_e+=re;
+            
+            if(old_p_e<0 || old_p_e>1){
+                throw std::exception();
+            }
+            igraph_vector_set(&tpe,i,old_p_e);
             
     
             reSum+=re;
@@ -1350,6 +1335,9 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
         igraph_vector_destroy(&tpe);
         igraph_vector_destroy(&EC);
         ECIndicator.clear();
+        
+        // check this graph
+        pGraph.graphCheck();
         
         double epsilon_G=pGraph.testAgaist(ak);
         
@@ -1407,8 +1395,8 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     
     UncertainGraph tGraph((igraph_integer_t)nv);
     
-    sigmaLow=0.0001;
-    sigmaUpper=0.1; // this is one can be claimed by coders for speeding up the execution
+    sigmaLow=0;
+    sigmaUpper=1; // this is one can be claimed by coders for speeding up the execution
     
     
     while(true){
@@ -1417,6 +1405,7 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
         UncertainGraph pGraph=generateObfuscation(sigmaUpper, &ep_res, ak);
         
         if(ep_res>=epsilon){
+            sigmaLow=sigmaUpper;
             sigmaUpper*=2;
         }else{
             tGraph=pGraph;
@@ -1425,18 +1414,18 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
         }
         
     }
+    // sigmaupper pass , sigmaUpper
     
     while((sigmaUpper-sigmaLow)<0.00001 ){
         cout<<"random search for sigmaUpper="<<sigmaUpper<<endl;
-        sigmaLow=sigmaUpper/2; // the last one failed
-        igraph_real_t sigma=(sigmaUpper+sigmaLow)/2;
+        igraph_real_t sigma_mid=(sigmaUpper+sigmaLow)/2;
         ep_res=1;
         UncertainGraph pGraph=generateObfuscation(sigmaUpper, &ep_res, ak);
         if(ep_res>=epsilon){
-            sigmaLow=sigma;
+            sigmaLow=sigma_mid;
         }else{
             tGraph=pGraph;
-            sigmaUpper=sigma;
+            sigmaUpper=sigma_mid;
             tEpsilion=ep_res;
         }
         
@@ -1738,6 +1727,18 @@ UncertainGraph init_uncertain_OB_from_file(string filepath, long nv){
 }
 
 
+// just for debugging
 
+void UncertainGraph::graphCheck(){
+    igraph_vector_t deg;
+    
+    igraph_vector_init(&deg, nv);
+    getDegrees(false, &deg);
+    
+    int edgeNum=igraph_vector_sum(&deg)/2;
+    if(edgeNum!=ne){
+        throw std::exception();
+    }
+}
 
 

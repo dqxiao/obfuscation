@@ -7,7 +7,9 @@
 //
 
 #include "Help.hpp"
+#include <random>
 #include <fstream>
+#include <set>
 
 void call_print_vector(igraph_vector_t *v, FILE *f) {
     long int i;
@@ -77,7 +79,7 @@ void print_sp_matrix(const igraph_spmatrix_t *m, std::string exp){
 }
 
 
-void print_map(map<int,vector<int>> m){
+void print_map(map<int,vector<int> > m){
     for(auto mitem:m){
         cout<<mitem.first<<":";
         for(auto p:mitem.second){
@@ -228,7 +230,7 @@ void vector_statstic(igraph_vector_t *input){
 }
 
 
-void reorginsedByrow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int>> & rep, map<int, vector<int>> & repPos){
+void reorginsedByrow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int> > & rep, map<int, vector<int> > & repPos){
     // input: matrix
     // nrow=nv
     // ncol=sampleNum
@@ -353,9 +355,23 @@ int intersection_matrix_cout(boost::numeric::ublas::matrix<int> &matrix, int fst
 }
 
 
+double compareRowDirect(boost::numeric::ublas::matrix<int> &m, int first, int second){
+    
+    double result=0;
+    
+    int ncol=(int)m.size2();
+    
+    for(int j=0;j<ncol;j++){
+        if(m(first,j)==m(second,j)){
+            result+=1;
+        }
+        
+    }
+    return result;
+}
 
 
-int compareRow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int>> & rep, map<int, vector<int>> & repPos,int first,int second){
+int compareRow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int> > & rep, map<int, vector<int> > & repPos,int first,int second){
 
     double result=0;
     
@@ -408,10 +424,10 @@ int compareRow(boost::numeric::ublas::matrix<int> &m, map<int, vector<int>> & re
 
 
 double compare_In_Matrix(boost::numeric::ublas::matrix<int> &ref, boost::numeric::ublas::matrix<int> &test){
-    map<int,vector<int>> reps_mref; // repstart pos;
-    map<int,vector<int>> reppos_mref;
-    map<int,vector<int>> reps_mTest; // repstart pos;
-    map<int,vector<int>> reppos_mTest;
+    map<int,vector<int> > reps_mref; // repstart pos;
+    map<int,vector<int> > reppos_mref;
+    map<int,vector<int> > reps_mTest; // repstart pos;
+    map<int,vector<int> > reppos_mTest;
     
    
     
@@ -429,6 +445,7 @@ double compare_In_Matrix(boost::numeric::ublas::matrix<int> &ref, boost::numeric
     int c_sample=(int) ref.size2(); // get the number of sample
     
     double diff=0;
+    
     for(int first=0;first<nv;first++){
         // never try same pair
         for(int second=first+1;second<nv;second++){
@@ -450,4 +467,60 @@ double compare_In_Matrix(boost::numeric::ublas::matrix<int> &ref, boost::numeric
     return diff;
 }
 
+
+
+
+double sampleing_compare_In_Matrix(boost::numeric::ublas::matrix<int> &ref, boost::numeric::ublas::matrix<int> &test){
+    
+    double diff=0.0;
+    
+    int nv=(int)ref.size1(); // nv
+    int vsampleNum=2000;
+    std::set<int> sampleVertices;
+    
+    if(nv==0){
+        throw std::exception();
+    }
+//    uniform_real_distribution<int> unDist(0,nv-1);
+//    
+
+//    
+//    
+//    random_device rd;
+//    
+//    std::mt19937 gen(rd());
+    
+    while(sampleVertices.size()!=vsampleNum){
+        int newVal=rand()%nv;
+        sampleVertices.insert(newVal);
+        
+    }
+    
+    vector<int> svec(sampleVertices.begin(),sampleVertices.end());
+    
+    
+    sort(svec.begin(),svec.end());
+    int c_sample=(int)ref.size2();
+    for(int i=0;i<svec.size();i++){
+        for(int j=i+1;j<svec.size();j++){
+            int first=svec[i];
+            int second=svec[j];
+            
+            if(first>nv || second>nv){
+                throw std::exception();
+            }
+            
+            int refVal=compareRowDirect(ref, first, second);
+            int testVal=compareRowDirect(test, first, second);
+            int cdiff=std::abs(refVal-testVal);
+            diff+=(double) cdiff/c_sample; // pair
+        }
+    }
+    
+    diff*=2;
+    diff/=vsampleNum;
+    diff/=vsampleNum-1;
+    
+    return diff;
+}
 
