@@ -472,7 +472,8 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
     
     
     printf("start the computation of the sigma-uniqueness of all V \n");
-    sigmaUniquess(&uv, *ak, maxDegree, sigma);
+    double sigma_uniques=std::min(0.01,sigma);
+    sigmaUniquess(&uv, *ak, maxDegree, sigma_uniques);
     printf("finish the computation \n");
     
     

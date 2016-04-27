@@ -168,12 +168,13 @@ double UncertainGraph::testAgaist(igraph_vector_t *ak){
     igraph_vector_t ePResult;
     
     maxDegree=igraph_vector_max(ak);
+    
     igraph_vector_init(&ePResult, maxDegree+1);
     cout<<"cal entropy, it takes a while ~10 mins "<<endl;
     entropyReport(&ePResult,maxDegree);
     cout<<"end entropy computation"<<endl;
     
-    theshold=log2(k-2);
+    theshold=log2(k); //
     for(long int i=0;i<nv;i++){
         igraph_real_t val=VECTOR(*ak)[i];
         double diff=theshold-VECTOR(ePResult)[(long int) val];
@@ -292,6 +293,8 @@ void UncertainGraph::rawEstimate(igraph_vector_t *r_edge){
         if(eVal>nVal && nVal!=0){
             diff=eVal-nVal;
             igraph_vector_set(r_edge,i,diff);
+        }else{
+            igraph_vector_set(r_edge,i,0);
         }
         
         
@@ -687,9 +690,18 @@ void UncertainGraph::reliablityUtilitySubgraph(igraph_vector_t *ruv){
 }
 
 
-/**
- *
- */
+
+void UncertainGraph::reliablityUtiliyInit(igraph_vector_t *ruv){
+    
+    
+    // from to  diff_reliablity
+    
+    
+    
+    
+    
+}
+
 void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
    
     igraph_vector_t r_edge;
@@ -828,12 +840,7 @@ void UncertainGraph::reliablity(igraph_vector_t * res, string filepath){
 }
 
 void UncertainGraph::reliablity_record(long int csampleNum, string filepath){
-    
-    // vector to string
-    
-  
     boost::numeric::ublas::matrix<int> m (nv,csampleNum); //
-    
     for(long int i=0;i<csampleNum;i++){
         cout<<i<<"sample Graph for reliablity record" <<endl;
         
@@ -846,8 +853,6 @@ void UncertainGraph::reliablity_record(long int csampleNum, string filepath){
         for(long int index=0;index<nv;index++){
             m(index,i)=VECTOR(sc)[index];
         }
-        
-        
         igraph_vector_destroy(&sc);
         
     }
@@ -1226,6 +1231,7 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
        
         printf("finish edge selection:%li edges \n", k);
         printf("select edge from existing edge :%li\n",exist);
+        
         printf("size of EC : %li\n", igraph_vector_size(&EC));
         printf("cout:%li, ce:%li, k:%li \n",count,ce,k);
         
@@ -1375,17 +1381,378 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
 }
 
 
-UncertainGraph UncertainGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak){
-   
+UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, igraph_real_t *eps_res, igraph_vector_t *ak){
+    
+    UncertainGraph pg(nv);
+    
+    igraph_real_t epsilonStart,maxDegree;
+    igraph_vector_t degrees,uv,eids;
     
     
-    if(option==randPert){
-        return randomGenerateObfuscation(sigma, eps_res, ak);
-    }else{
-        return randomGenerateObfuscation(sigma, eps_res, ak);
+    vector<double> lowNodes;
+    vector<int> edgeShuffle;
+    vector<Node_UN> nodeUNs;
+    
+    
+    
+    epsilonStart=1;
+    igraph_vector_init(&degrees,nv);
+    igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
+    maxDegree=igraph_vector_max(ak);
+    igraph_vector_init(&uv,nv);
+    
+    
+    printf("start the computation of the sigma-uniqueness of all V \n");
+    
+    double unique_sigma=0.01;
+    sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
+    
+    printf("finish the computation \n");
+    
+    
+    
+    int skip_count=(int) lround(epsilon*nv/2)+1;
+    
+    
+    for(long int i=0;i<nv;i++){
+        nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],VECTOR(uv)[i]));
+        lowNodes.push_back(VECTOR(uv)[i]);
     }
     
     
+    sort(nodeUNs.begin(),nodeUNs.end());
+    
+    for(int i=0;i<skip_count;i++){
+        Node_UN  nu=nodeUNs[i];
+        long int pos=nu.nodeID;
+        lowNodes[pos]=0;
+    }
+    
+    discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
+    uniform_real_distribution<double> unDist(0.0,1.0);
+    uniform_real_distribution<double> unGenDist(0.0,1.0);
+    default_random_engine sgen; // random engine
+    
+    
+    
+    
+    printf("number of vertices:%li \n",nv);
+    
+    
+    
+    igraph_vector_init(&eids, 0);
+    igraph_get_edgelist(&graph, &eids, false);
+    
+    
+    unordered_map<Edge, double>EIndicator;
+    
+    for(long int i=0;i<ne;i++){
+        long int from=VECTOR(eids)[2*i];
+        long int to=VECTOR(eids)[2*i+1];
+        double p_e=VECTOR(pe)[i];
+        
+        if(from>to){
+            swap(from,to);
+        }
+        // use this one as matrix
+        EIndicator[Edge(from,to)]=p_e;
+    }
+    
+    
+    
+    
+    
+    
+    /*randomized geneation candiates*/
+    for(int tn=0;tn<attempt;tn++){
+        
+        long int ce=lround(c*ne);
+        igraph_vector_t EC,ue,tpe; // just for temporary uncertain graph
+        long int k=0;
+        long count=ne;
+        
+        
+        
+        igraph_real_t ueSum,sigma_Sum;
+        ueSum=0;
+        sigma_Sum=0;
+        
+        random_device rd;
+        
+        std::mt19937 gen(rd());
+        
+        
+        igraph_vector_init(&EC, 2*ce);
+        
+        unordered_map<Edge, double> ECIndicator;
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(eids)[2*i];
+            long int to=VECTOR(eids)[2*i+1];
+            
+            if(from>to){
+                swap(from,to);
+            }
+            ECIndicator[Edge(from,to)]=1;
+        }
+        //
+        
+        printf("iteration %d\n",tn);
+        printf("select %li edges from %li nodes \n", ce,nv-skip_count);
+        
+        // select edge
+        while(true){
+            
+            long int u=distribution(gen);
+            long int v=distribution(gen);
+            
+            
+            if(u==v){
+                continue;
+            }
+            
+            if(u>v){
+                swap(u,v);
+            }
+            
+            double pickP=unDist(gen);
+            
+            
+            double p_uv=0;
+            
+            auto search=EIndicator.find(Edge(u,v));
+            if(search!=EIndicator.end()){
+                p_uv=search->second;
+            }
+            
+            
+            int existEC=0;
+            auto ecSearch=ECIndicator.find(Edge(u,v));
+            // exist or not
+            if(ecSearch!=ECIndicator.end()){
+                existEC=ecSearch->second;
+            }
+            
+            if(p_uv>pickP){
+                
+                
+                // remove edge
+                if(existEC==1){
+                    count-=1;
+                    ecSearch->second=0;
+                }else{
+                }
+            }else{
+                // add one edge
+                
+                if(existEC==0 && p_uv==0){
+                    igraph_vector_set(&EC, k++,u);
+                    igraph_vector_set(&EC, k++,v);
+                    
+                    count+=1;
+                    
+                    if(ecSearch!=ECIndicator.end()){
+                        ecSearch->second=1;
+                    }else{
+                        ECIndicator[Edge(u,v)]=1;
+                    }
+                }
+                
+            }
+            
+            
+            if(count==ce){
+                break;
+            }
+            
+        }
+        
+        long int exist=0;
+        
+        for(long int i=0;i<ne;i++){
+            long int from=VECTOR(eids)[2*i];
+            long int to=VECTOR(eids)[2*i+1];
+            if(from>to){
+                swap(from,to);
+            }
+            
+            int existEC=0;
+            auto ecSearch=ECIndicator.find(Edge(from,to));
+            
+            if(ecSearch!=ECIndicator.end()){
+                existEC=ecSearch->second;
+            }
+            
+            
+            if(existEC==1){
+                igraph_vector_set(&EC, k++, from);
+                igraph_vector_set(&EC, k++, to);
+                exist+=1;
+            }
+            
+        }
+        
+        
+        printf("finish edge selection:%li edges \n", k);
+        printf("select edge from existing edge :%li\n",exist);
+        printf("size of EC : %li\n", igraph_vector_size(&EC));
+        printf("cout:%li, ce:%li, k:%li \n",count,ce,k);
+        
+        
+        
+        if(k!=2*ce){
+            throw std::exception();
+        }
+        
+        
+        
+        igraph_vector_init(&ue,ce);
+        igraph_vector_init(&tpe,ce);
+        
+        
+        
+        
+        
+        for(long int i=0;i<ce;i++){
+            igraph_real_t eVal=0;
+            eVal+=VECTOR(uv)[int(VECTOR(EC)[2*i])];
+            eVal+=VECTOR(uv)[int(VECTOR(EC)[2*i+1])];
+            eVal/=2;
+            ueSum+=eVal;
+            igraph_vector_set(&ue,i,eVal);
+        }
+        
+        
+        igraph_vector_scale(&ue,1.0/ueSum);
+        
+        int seed=1246789091;
+        int unCount=0;
+        double reSum=0;
+        printf("start inject uncertainty \n");
+        
+        // add one random shuffle to help
+        
+        
+        for(long int i=0;i<ce;i++){
+            
+            
+            igraph_real_t sigma_e=sigma*ce*VECTOR(ue)[i];
+            
+            double w=unDist(gen);
+            sigma_Sum+=sigma_e;
+            igraph_real_t re=0;
+            
+            
+            long int from=VECTOR(EC)[2*i];
+            long int to=VECTOR(EC)[2*i+1];
+            
+            
+            
+            
+            if(from>to){
+                swap(from,to);
+            }
+            
+            //
+            double old_p_e=0;
+            
+            auto search=EIndicator.find(Edge(from,to));
+            if(search!=EIndicator.end()){
+                old_p_e=search->second;
+            }
+            
+            
+            if(w<noise){
+                re=unGenDist(sgen);
+                unCount+=1;
+                re*=(2*(0.5-old_p_e));
+            }else{
+                re=truncated_normal_ab_sample(0.0, sigma_e, 0.0, 1.0, seed);
+                re*=(2*(0.5-old_p_e));
+                
+            }
+            
+            // generate the solution
+            old_p_e+=re;
+            
+            if(old_p_e<0 || old_p_e>1){
+                throw std::exception();
+            }
+            igraph_vector_set(&tpe,i,old_p_e);
+            
+            
+            reSum+=re;
+        }
+        
+        
+        printf("finish inject uncertainty \n");
+        
+        printf("inject uncertainty %f \n", reSum/ce);
+        
+        printf("inject uncertainty over white noise %f \n", (double)unCount/ce);
+        
+        printf("sum of edge :%f \n", igraph_vector_sum(&tpe));
+        
+        printf("average of sigme %f \n",sigma_Sum/ce);
+        
+        printf("init edge and probs \n");
+        UncertainGraph pGraph((igraph_integer_t)nv);
+        pGraph.set_edges(&EC);
+        pGraph.set_edges_probs(&tpe);
+        
+        igraph_vector_destroy(&ue);
+        igraph_vector_destroy(&tpe);
+        igraph_vector_destroy(&EC);
+        ECIndicator.clear();
+        
+        // check this graph
+        pGraph.graphCheck();
+        
+        double epsilon_G=pGraph.testAgaist(ak);
+        
+        if(epsilon_G<epsilonStart){
+            pg=pGraph;
+            epsilonStart=epsilon_G;
+            cout<<"find better obfuscation one :"<<epsilon_G<<endl;
+        }
+        
+        cout<<"finish "<<tn<<" attempt" <<endl;
+        
+        
+    }
+    
+    
+    
+    //igraph_vector_destroy(&cuv);
+    EIndicator.clear();
+    igraph_vector_destroy(&degrees);
+    igraph_vector_destroy(&uv);
+    igraph_vector_destroy(&eids);
+    lowNodes.clear();
+    edgeShuffle.clear();
+    nodeUNs.clear();
+    
+    
+    *eps_res=epsilonStart;
+    
+    
+    
+    
+    
+    return pg;
+    
+}
+
+UncertainGraph UncertainGraph::generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak){
+
+    switch (option) {
+        case randPert:
+            return randomGenerateObfuscation(sigma, eps_res, ak);
+            break;
+            
+        case greedPert:
+            return randomGenerateObfuscation(sigma,eps_res,ak);
+            break;
+    }
 }
 
 UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){

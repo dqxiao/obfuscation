@@ -18,6 +18,4 @@ UncertainGraph.o: UncertainGraph.cpp
 clean:
 	rm *.o
 	rm main 
-	# rm *.exe
-	# rm *.exe.*
 	

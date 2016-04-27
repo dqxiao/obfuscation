@@ -19,18 +19,27 @@ using boost::math::normal;
  */
 void exact_cal(const igraph_vector_t * input, igraph_vector_t *res,long int degree,long int maxDegree){
     
-    igraph_vector_set(res, 0, 1);
+    igraph_vector_t temp;
+    igraph_vector_init(&temp,degree+1);
+    
+    igraph_vector_set(&temp, 0, 1);
     
     for(long int i=0;i<degree;i++){
         igraph_real_t p=VECTOR(*input)[i];        
         for(long j=i+1;j>=1;j--){
-            igraph_vector_set(res,j,VECTOR(*res)[j]*(1-p)+VECTOR(*res)[j-1]*p);
+            igraph_vector_set(&temp,j,VECTOR(temp)[j]*(1-p)+VECTOR(temp)[j-1]*p);
         }
         
-        igraph_vector_set(res,0,VECTOR(*res)[0]*(1-p));
+        igraph_vector_set(&temp,0,VECTOR(temp)[0]*(1-p));
         
     }
     
+    // copy to real result 
+    
+    for(long int i=0;i<std::min(degree,maxDegree)+1;i++){
+        igraph_vector_set(res,i, VECTOR(temp)[i]);
+    }
+
     
 }
 /*

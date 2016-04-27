@@ -36,6 +36,7 @@ public:
     void entropyReport(igraph_vector_t *res, igraph_real_t maxDegree);  // used only for uncertain graph, maxDegre=
     double testAgaist(igraph_vector_t * ak);
     void graphStastic(void); // basic graph statistics; linear function
+    void graphDegreeVairance(double sigma_graph); //
     
     
     double diffconectPairAddEdge(double from, double to);
@@ -43,6 +44,8 @@ public:
     void reliablityUtilitySubgraph(igraph_vector_t *ruv);
     void maxConnectedConponent(igraph_vector_t * re_edges, igraph_vector_t * re_pe, igraph_vector_t * startPos,long int * cnum);
     void reliablityUtiliy(igraph_vector_t * ruv); // used for uncertain graph to cal
+    void reliablityUtiliyInit(igraph_vector_t * ruv); // read from file
+    
     void reliablity(igraph_vector_t * res); // used for uncertain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
     void reliablity_record(long int sampleNum, string filePath);   // used for record relaiblity intermediate matrix =sample*nv
@@ -56,6 +59,10 @@ public:
     UncertainGraph generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); // used for uncertain graph
 
     UncertainGraph randomGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);
+    
+    UncertainGraph greedyGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);
+    
+    
     
     UncertainGraph obfuscation(igraph_vector_t *ak); // used for uncertain graph obfuscation
 

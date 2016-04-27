@@ -74,68 +74,55 @@ void testObfuscation(){
 void reliablityComparision(){
     
     string relfoler="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/";
-    string dataset="DBLP";
-    string input_suffix="_InPG_rel.txt";
-    string rep_suffix="rep_rel.txt";
-    string ob_suffix="outpg_rel.txt";
-    string method="GREEDY1-1";
-    string ourMethod="rand_dblp_ob_c1.700000_k300";
     
+    
+    
+    string refdata="inpg_rel";
     long int nv=824774;
     
-    igraph_vector_t inRel,repRel,outRel,randRel;
-    igraph_vector_init(&inRel,nv);
-    igraph_vector_init(&repRel,nv);
-    igraph_vector_init(&outRel,nv);
-    igraph_vector_init(&randRel,nv);
+    vector<string> datasets;
+    
+//    datasets.push_back("rand_dblp_ob_c1.100000_k100_rel");
+//    datasets.push_back("rand_dblp_ob_c1.100000_k60_rel");
+//    datasets.push_back("rand_dblp_ob_c1.300000_k200_rel");
+//    datasets.push_back("rand_dblp_ob_c1.500000_k300_rel");
+    
+    datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob_rel");
+    datasets.push_back("GREEDY1-1_dblpc3.000000_k200_ob_rel");
+    datasets.push_back("GREEDY5-1_dblpc2.000000_k100_ob_rel");
     
     
+    igraph_vector_t ref;
+    igraph_vector_init(&ref,nv);
     
-    init_vector_file(&inRel, relfoler+dataset+input_suffix);
-    init_vector_file(&repRel, relfoler+method+"_"+rep_suffix);
-    init_vector_file(&outRel, relfoler+method+"_s2000"+"_"+ob_suffix);
-    init_vector_file(&randRel,relfoler+ourMethod+"_"+"rel.txt");
-    
+    init_vector_file(&ref,relfoler+refdata+".txt");
     
     
-//    cout<<"mean error"<<endl;
-//    cout<<"inRel vs outRel : "<<cal_mean_error_vector(&inRel, &outRel)<<endl;
-//    
-//    cout<<"mean error"<<endl;
-//    cout<<"inRel vs repRel : "<<cal_mean_error_vector(&inRel, &repRel)<<endl;
-//    
-//    cout<<"mean error"<<endl;
-//    cout<<"repRel vs outRel : "<<cal_mean_error_vector(&repRel, &outRel)<<endl;
-//    
-//    
-//    cout<<"mean error"<<endl;
-//    
-//    cout<<"inRel vs randRel : "<<cal_mean_error_vector(&inRel, &randRel)<<endl;
+    for(string dataset:datasets){
+        
+        igraph_vector_t test;
+        
+        igraph_vector_init(&test,nv);
+        
+        init_vector_file(&test, relfoler+dataset+".txt");
+        
+        cout<<"Original vs" <<dataset<<endl;
+        
+        cout<<"Mean Error"<<endl;
+        
+        cout<<cal_mean_error_vector(&ref,&test)<<endl;
+        
+        cout<<"Mean Relative Error"<<endl;
+        
+        cout<<cal_relative_error_vector(&ref, &test)<<endl;
+        
+        
+        igraph_vector_destroy(&test);
+    }
     
-    cout<<"sparse"<<endl;
-    
-    is_sparese(&inRel, nv);
- 
-    
-    
-    cout<<"mean relative Error"<<endl;
-    
-    cout<<"inRel vs randRel : "<<cal_relative_error_vector(&inRel, &randRel)<<endl;
-    
-    
-    cout<<"mean error"<<endl;
-    cout<<"inRel vs outRel : "<<cal_relative_error_vector(&inRel, &outRel)<<endl;
-    
-    cout<<"mean error"<<endl;
-    cout<<"inRel vs repRel : "<<cal_relative_error_vector(&inRel, &repRel)<<endl;
-    
-    cout<<"mean error"<<endl;
-    cout<<"repRel vs outRel : "<<cal_relative_error_vector(&repRel, &outRel)<<endl;
+    igraph_vector_destroy(&ref);
     
     
-    cout<<"mean error"<<endl;
-    
-    cout<<"inRel vs randRel : "<<cal_mean_error_vector(&inRel, &randRel)<<endl;
 
 }
 
@@ -253,10 +240,11 @@ void generateReliablity(){
     long int nv=824774;
     vector<string> datasets;
     
-    datasets.push_back("rand_dblp_ob_c1.100000_k100");
+//    datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob");
     datasets.push_back("rand_dblp_ob_c1.100000_k60");
     datasets.push_back("rand_dblp_ob_c1.300000_k200");
     datasets.push_back("rand_dblp_ob_c1.500000_k300");
+    datasets.push_back("rand_dblp_ob_c1.100000_k100_rel");
     
     for(string dataset: datasets){
         UncertainGraph uobg=init_uncertain_OB_from_file(obfolder+dataset+".txt", nv);
@@ -272,12 +260,15 @@ void generateReliablity(){
 void generateInReliablity(){
     
     delimiter='\t';
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
-    string relPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relInOutput/dblp/dblp_s2000.txt";
-    UncertainGraph uobg=init_uncertain_from_file(filepath);
+    string folder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
+    string dataset="GREEDY5-1_dblpc3.000000_k300_ob";
+    
+    string relFolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relInOutput/dblp/";
+    long int nv=824774;
+    UncertainGraph uobg=init_uncertain_OB_from_file(folder+dataset+".txt", nv);
     
     long int cSampleNum=2000;
-    uobg.reliablity_record(cSampleNum, relPath);
+    uobg.reliablity_record(cSampleNum, relFolder+dataset+"_s2000_rel.txt");
     
     
 }
@@ -368,13 +359,13 @@ void certainObfuscation(){
     string folder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output/";
     string file="GREEDY5-1_dblp";
     
-    string relFolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
+    string obFolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
     
-    c=2;
+    c=3;
     attempt=1;
     epsilon=0.0001;
     noise=0.01;
-    k=60;
+    k=300;
     delimiter=' ';
     
     Graph g=init_from_Adj_File(folder+file+".txt");
@@ -394,10 +385,58 @@ void certainObfuscation(){
 
     
    // g.selfTest(k);
-    double sigma=0.04;
+    double sigma=32;
     double esp_res=1;
     //UncertainGraph tpg=g.generateObfuscation(sigma, &esp_res);
     UncertainGraph tpg=g.generateObfuscation(sigma, &esp_res, &ak);
+    
+    tpg.print_graph(obFolder+file+suffix);
+    
+}
+
+
+
+void randomPerturbationTest_traffic(){
+    
+    delimiter='\t';
+    option=randPert; // set the random option
+    c=1.1;
+    attempt=1;
+    epsilon=0.0001;
+    noise=0.01;
+    k=10;
+    
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/trafficUK.txt";
+    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_trafficUK_ob";
+    
+    string ssufix="_c"+to_string(c)+"_k"+to_string(k)+".txt" ;// setting suffix ;
+    
+    
+    UncertainGraph ug=init_uncertain_from_file(filepath);
+    
+    
+    
+    long int nv=ug.nv;
+    
+    igraph_vector_t ak;
+    igraph_real_t eps_res,sigma;
+    igraph_vector_init(&ak,nv);
+    ug.getDegrees(true, &ak);
+    ug.testAgaist(&ak);
+    
+//    sigma=;
+//    
+//    
+//    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+//    
+//    
+//    
+//    tpg.print_graph(obFilePath+ssufix);
+    
+    
+    
+    igraph_vector_destroy(&ak);
+    
     
 }
 
@@ -405,17 +444,20 @@ void certainObfuscation(){
 int main(){
    // graphTest();
    // graphCastTest();
-  // reliablityComparision();
+   // reliablityComparision();
  //   testObfuscation();
 //    reliablityUtiltyTest();
-  //  randomPerturbationTest();
+//   randomPerturbationTest();
+    randomPerturbationTest_traffic();
     
- // generateReliablity();
-    //generateInReliablity();
+    
+  //  generateReliablity();
+   // generateInReliablity();
+    
     
    // basic_metric();
-   // exact_reliablityComparision();
+    //exact_reliablityComparision();
     //timeestimation();
-    certainObfuscation();
+    //certainObfuscation();
     return 0;
 }
