@@ -7,6 +7,7 @@
 //
 
 #include "DDCal.hpp"
+#include "Configuration.hpp"
 #include <math.h>
 #include <boost/math/distributions/normal.hpp>
 #include <algorithm>
@@ -40,6 +41,8 @@ void exact_cal(const igraph_vector_t * input, igraph_vector_t *res,long int degr
         igraph_vector_set(res,i, VECTOR(temp)[i]);
     }
 
+    igraph_vector_destroy(&temp);
+    // done 
     
 }
 /*
@@ -229,6 +232,75 @@ void is_sparese(igraph_vector_t * input, long int nv){
     printf("average:%f \n", (double)sum/(nv*(nv-1)) );
     
     
+}
+
+
+void reverseVector(igraph_vector_t * ruv){
+    
+    double minVal=igraph_vector_min(ruv);
+    double maxVal=igraph_vector_max(ruv);
+
+    double diff=maxVal-minVal;
+    int  size=(int)igraph_vector_size(ruv);
+    
+    double sigma=standard_vaiance_vector(ruv);
+    
+    normal ns(0,0.4);
+    
+    for(int i=0;i<size;i++){
+
+        
+        double val=VECTOR(*ruv)[i];
+        
+        val=(val-minVal)/diff; // into 0,1
+        
+      
+        
+        //val=boost::math::pdf(ns,val);
+        
+        igraph_vector_set(ruv,i,val);
+    }
+    
+    // done
+}
+
+
+double featureCombine(double uniq, double robust){
+    //option 1: mutilple
+    
+    if(foption==mutiply){
+        return uniq*robust;
+    }else{
+        return uniq;
+    }
+    
+}
+
+
+double standard_vaiance_vector(igraph_vector_t * ruv){
+    // E(x^2)-E(x)^2
+    
+    double exSum=0;
+    double ex2Sum=0;
+    double sigma=0.1;
+    int size=(int)igraph_vector_size(ruv);
+    
+    for(long int i=0;i<size;i++){
+        double val=VECTOR(*ruv)[i];
+       
+        exSum+=val;
+        ex2Sum+=(val*val);
+    }
+    
+    
+    double varX=(ex2Sum/size)-(exSum/size)*(exSum/size);
+    
+    sigma=sqrt(varX);
+    if(sigma==0){
+        return 0.1;
+    }
+    
+    return sigma;
 }
 
 

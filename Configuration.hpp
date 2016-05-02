@@ -23,5 +23,9 @@ extern bool uncertain;
 
 enum Option {randPert=1,greedPert=2};
 
-extern Option option; 
+enum FeatureCombineOption {mutiply=1,plus=2};
+
+extern Option option;
+extern FeatureCombineOption foption;
+
 #endif /* Configuration_hpp */

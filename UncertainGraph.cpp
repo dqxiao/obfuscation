@@ -689,18 +689,147 @@ void UncertainGraph::reliablityUtilitySubgraph(igraph_vector_t *ruv){
     
 }
 
-
+// just for current use
+//
 
 void UncertainGraph::reliablityUtiliyInit(igraph_vector_t *ruv){
     
+    // file path
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/reliablityNode/nodeRelDiff_E.txt";
     
-    // from to  diff_reliablity
+    init_vector_file(ruv, filepath);
+    reverseVector(ruv);
+    cout<<"reverse reliablity utility vector"<<endl;
+    vector_statstic(ruv);
+    
+    // done
+}
+
+
+void UncertainGraph::aggregateReliablutyDiffEE(igraph_vector_t * ruv, igraph_vector_t * rue){
+    
+    igraph_vector_t edges;
+    igraph_vector_init(&edges,2*ne);
+    
+    igraph_get_edgelist(&graph, &edges, false);
+    
+    for(long int i=0;i<ne;i++){
+        int from=VECTOR(edges)[2*i];
+        int to=VECTOR(edges)[2*i+1];
+        double val=VECTOR(*rue)[i];
+        igraph_vector_set(ruv,from, VECTOR(*ruv)[from]+val);
+        igraph_vector_set(ruv,to,VECTOR(*ruv)[to]+val);
+    }
+    
+    igraph_vector_scale(ruv, 1.0/(nv-1)); // scale to 
+    igraph_vector_destroy(&edges);
+}
+
+
+void UncertainGraph::aggregateReliablityDiff(igraph_vector_t *v_rep, igraph_vector_t *indicator, igraph_vector_t *res, double p){
+    
+    
+    igraph_vector_t c_res, edges;
+    igraph_vector_init(&c_res,nv);
+    igraph_vector_init(&edges,2*ne);
+    
+    igraph_get_edgelist(&graph, &edges, false);
+    
+    
+    // thanks god
+    
+    std::map<int, int> c_componet; // component: # of v in inside
+    long int allPairs=0;
+    // aggregate
+    for(int i=0;i<nv;i++){
+        int rep=(int)VECTOR(*v_rep)[i];
+        ++c_componet[rep];
+    }
+    
+    
+    for(auto item:c_componet){
+        allPairs+=item.second*item.second;
+    }
+    
+    //
+    
+    for(int i=0;i<nv;i++){
+        int rep=(int)VECTOR(*v_rep)[i];
+        int repNum=c_componet[rep];
+        
+        long int diffVal=allPairs-(repNum*repNum);
+        diffVal*=2*repNum;
+        
+        igraph_vector_set(&c_res,i,diffVal);
+    }
+    
+    
+    // fixed the problem for existing edges
+    for(int i=0;i<ne;i++){
+        
+        int from=VECTOR(edges)[2*i];
+        int to=VECTOR(edges)[2*i+1];
+        
+        int repFrom=VECTOR(*v_rep)[from];
+        int repTo=VECTOR(*v_rep)[to];
+        
+        if(repFrom==repTo){
+            // do no thing
+        }else{
+            int repNumFrom=c_componet[repFrom];
+            int repNumTo=c_componet[repTo];
+            long int refDiff=2*repNumFrom*repNumTo;
+            igraph_vector_set(&c_res,from, VECTOR(c_res)[from]-refDiff);
+            igraph_vector_set(&c_res,to, VECTOR(c_res)[to]-refDiff);
+        }
+    }
+    
+    
+    // done
     
     
     
     
+    
+    igraph_vector_scale(&c_res, p);
+    igraph_vector_add(res,&c_res);
+    igraph_vector_destroy(&c_res);
+    igraph_vector_destroy(&edges);
+    c_componet.clear();
     
 }
+
+
+
+void UncertainGraph::reliablityUtiltyDiff(igraph_vector_t *ruv){
+    
+    double p=1.0/sampleNum;
+    
+    for(int i=0;i<sampleNum;i++){
+        igraph_vector_t ind, vRep;
+        igraph_vector_init(&ind,ne);
+        igraph_vector_init(&vRep,nv);
+       
+        
+        cout<<i<<"sample for reliablity Utility difference"<<endl;
+        UncertainGraph sg=sampleGraph(&ind);
+        Graph g(sg); // cast to certain graph
+        
+        
+        g.connectedComponent(&vRep);
+        
+        aggregateReliablityDiff(&vRep, &ind, ruv, p);
+        
+        
+        igraph_vector_destroy(&ind);
+        igraph_vector_destroy(&vRep);
+    }
+    
+    double scale_nv_p=1.0/(nv*(nv-1));
+    
+    igraph_vector_scale(ruv, scale_nv_p);
+}
+
 
 void UncertainGraph::reliablityUtiliy(igraph_vector_t *ruv){
    
@@ -1012,7 +1141,8 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
         igraph_vector_set(uv,i,VECTOR(s_com)[degree]);
     }
     
-    
+    vector_statstic(uv);
+    //
     igraph_vector_destroy(&s_com);
     igraph_vector_destroy(&freqs);
     igraph_vector_destroy(&degrees);
@@ -1042,7 +1172,7 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     
     printf("start the computation of the sigma-uniqueness of all V \n");
     
-    double unique_sigma=0.01;
+    double unique_sigma=0.4;
     sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
     printf("finish the computation \n");
     
@@ -1404,20 +1534,38 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     
     printf("start the computation of the sigma-uniqueness of all V \n");
     
-    double unique_sigma=0.01;
+    double unique_sigma=0.4;
     sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
-    
     printf("finish the computation \n");
+    
+ 
+    
+    
+    igraph_vector_t ruv;
+    igraph_vector_init(&ruv,nv);
+    reliablityUtiliyInit(&ruv); // done
+    
+    
+    
     
     
     
     int skip_count=(int) lround(epsilon*nv/2)+1;
     
+    // just for debugging
+    igraph_vector_t  fuv;
+    igraph_vector_init(&fuv,nv);
     
     for(long int i=0;i<nv;i++){
-        nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],VECTOR(uv)[i]));
-        lowNodes.push_back(VECTOR(uv)[i]);
+        
+       double val=featureCombine(VECTOR(uv)[i], VECTOR(ruv)[i]);
+        
+        nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],val));
+        lowNodes.push_back(val);
     }
+    
+    // for debugging
+   
     
     
     sort(nodeUNs.begin(),nodeUNs.end());
@@ -1425,8 +1573,15 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     for(int i=0;i<skip_count;i++){
         Node_UN  nu=nodeUNs[i];
         long int pos=nu.nodeID;
+        cout<<"pos"<<pos<<endl;
         lowNodes[pos]=0;
     }
+    
+    
+
+    
+//    cout<<"fixed uv"<<endl;
+//    vector_statstic(&fuv);
     
     discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
     uniform_real_distribution<double> unDist(0.0,1.0);
@@ -1750,7 +1905,7 @@ UncertainGraph UncertainGraph::generateObfuscation(igraph_real_t sigma, igraph_r
             break;
             
         case greedPert:
-            return randomGenerateObfuscation(sigma,eps_res,ak);
+            return greedyGenerateObfuscation(sigma, eps_res, ak);
             break;
     }
 }
@@ -1841,6 +1996,8 @@ UncertainGraph UncertainGraph::sampleGraph(igraph_vector_t * indicator){
     
     random_shuffle(vIDs.begin(), vIDs.end());
     
+    
+    
     for(int j=0;j<ne;j++){
         
         int i=vIDs[j];
@@ -1848,11 +2005,17 @@ UncertainGraph UncertainGraph::sampleGraph(igraph_vector_t * indicator){
         
         float x=unDist(generator);
         
+       ;
+        
+        
+        //cout<<"clear i:"<<i<<endl;
         if(e_prob>=x){
+           // cout<<"set i:"<<i<<"to 1"<<endl;
             igraph_vector_set(indicator,i,1);
             sampleEdges.push_back(VECTOR(edges)[2*i]);
             sampleEdges.push_back(VECTOR(edges)[2*i+1]);
         }else{
+           
             igraph_vector_set(indicator,i,0);
         }
     }
@@ -1860,10 +2023,11 @@ UncertainGraph UncertainGraph::sampleGraph(igraph_vector_t * indicator){
     
     if(sampleEdges.size()!=2*igraph_vector_sum(indicator)){
         print_vector(indicator,"the stupid indicator \n");
+        cout<<"sample Edge.size()"<<sampleEdges.size()<<endl;
         throw std::exception();
     }
     
-   // cout<<"sample Edge.size()"<<sampleEdges.size()<<endl;
+   
    // cout<<"edge sum in sample Graph:"<<igraph_vector_sum(indicator)<<endl;
     
     

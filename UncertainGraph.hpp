@@ -23,6 +23,11 @@ public:
 protected:
     void degreeDistribution(igraph_vector_t * res, igraph_real_t maxDegree); // used for sigmaUniquess cal, it seems wrong thought
     void aggregateAK(igraph_vector_t * res, igraph_real_t maxDegree, igraph_vector_t * ak); // used for sigmaUniquess cal
+    
+    void aggregateReliablityDiff(igraph_vector_t * v_rep,igraph_vector_t * indicator,igraph_vector_t *res, double p);
+    
+    
+    
 public:
     UncertainGraph(long nv);      // empty constructor
     UncertainGraph(const UncertainGraph & obj); // copy const constructor
@@ -45,6 +50,9 @@ public:
     void maxConnectedConponent(igraph_vector_t * re_edges, igraph_vector_t * re_pe, igraph_vector_t * startPos,long int * cnum);
     void reliablityUtiliy(igraph_vector_t * ruv); // used for uncertain graph to cal
     void reliablityUtiliyInit(igraph_vector_t * ruv); // read from file
+    
+    void reliablityUtiltyDiff(igraph_vector_t * ruv); // used for uncertail graph to cal
+    
     
     void reliablity(igraph_vector_t * res); // used for uncertain for cal reliablity
     void reliablity(igraph_vector_t * res, string filePath); // used for storeing reliablity result into file
@@ -70,6 +78,7 @@ public:
     
     
     
+    void aggregateReliablutyDiffEE(igraph_vector_t * ruv,igraph_vector_t *rue);
     UncertainGraph fixEdgeGraph(long int index,double val); // generate remove Graph via something subset
     UncertainGraph sampleGraph(igraph_vector_t * indicator); // generate sample graph with indicator
     UncertainGraph sampleGraph(void); // generate sample graph

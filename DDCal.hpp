@@ -36,4 +36,10 @@ long int permuateCal(long int number);
 void is_sparese(igraph_vector_t * input, long int nv);
 
 
+void reverseVector(igraph_vector_t * ruv);
+
+double featureCombine(double uniq, double robust);
+
+double standard_vaiance_vector(igraph_vector_t * ruv);
+
 #endif /* DDCal_hpp */
