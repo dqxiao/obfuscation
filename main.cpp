@@ -257,11 +257,11 @@ void greedyPerturbationTest(){
     string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
     string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/greedy_dblp_ob";
     igraph_real_t eps_res,sigma;
-    sigma=1;
+    //sigma=1;
     
     string utiltySetting="EE"; // existing edges p(e)
     
-    string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"_sigma"+to_string(sigma)+utiltySetting+".txt" ;// setting suffix ;
+    string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"search"+utiltySetting+".txt" ;// setting suffix ;
     
     
     UncertainGraph ug=init_uncertain_from_file(filepath);
@@ -279,7 +279,8 @@ void greedyPerturbationTest(){
     
     
     
-    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+   // UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+    UncertainGraph tpg=ug.obfuscation(&ak);
     
     
     
@@ -595,14 +596,22 @@ void testAgaist(){
     igraph_vector_destroy(&ak);
     
 }
-int main(){
+
+// change into script version later
+int main(int argc, char *argv[]){
+    
+    
+    
+    
+    
+
    // graphTest();
    // graphCastTest();
-    reliablityComparision();
+   // reliablityComparision();
  //   testObfuscation();
 //    reliablityUtiltyTest();
  //randomPerturbationTest();
-   // greedyPerturbationTest();
+    greedyPerturbationTest();
   //  randomPerturbationTest_traffic();
     
     

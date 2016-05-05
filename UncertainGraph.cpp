@@ -1095,7 +1095,7 @@ void UncertainGraph::aggregateAK(igraph_vector_t *res, igraph_real_t maxDegree, 
 
 void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma){
     igraph_vector_t s_com,freqs;
-    igraph_vector_t degrees;
+    //igraph_vector_t degrees;
     
     
     
@@ -1103,13 +1103,9 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
     
     igraph_vector_init(&freqs,maxDegree+1);
     igraph_vector_init(&s_com,maxDegree+1);
-    igraph_vector_init(&degrees,nv);
+   // igraph_vector_init(&degrees,nv);
     
-    //calculate frequncy via uncertain semantic
-    
-    //degreeDistribution(&freqs, maxDegree);
 
-    // calculate frequence directly
     
     aggregateAK(&freqs, maxDegree, &ak);
     
@@ -1121,9 +1117,9 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
         for(long int j=0;j<maxDegree+1;j++){
             double d=cal_distance(i, j);
             double tmp=boost::math::pdf(ns,d);
-            if(tmp==0 || d==1){
-                tmp=numeric_limits<double>::epsilon();
-            }
+//            if(tmp==0 || d==1){
+//                tmp=numeric_limits<double>::epsilon();
+//            }
             tmp*=VECTOR(freqs)[j];
             val+=tmp;
         }
@@ -1132,8 +1128,7 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
     }
     
     
-   // write_vector_file(&s_com,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/s_comm_c.txt");
-    //vector_statstic(&s_com);
+
     
     
     for(long int i=0;i<nv;i++){
@@ -1141,11 +1136,18 @@ void UncertainGraph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igr
         igraph_vector_set(uv,i,VECTOR(s_com)[degree]);
     }
     
-    vector_statstic(uv);
-    //
+    
+    //just for debugging purpose
+    
+    //write_vector_file(uv, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/uniqness.txt");
+    //write_vector_file(&ak, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/adversary.txt");
+    
+    
+    
+    
     igraph_vector_destroy(&s_com);
     igraph_vector_destroy(&freqs);
-    igraph_vector_destroy(&degrees);
+
 }
 
 
@@ -1573,15 +1575,25 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     for(int i=0;i<skip_count;i++){
         Node_UN  nu=nodeUNs[i];
         long int pos=nu.nodeID;
-        cout<<"pos"<<pos<<endl;
+       // cout<<"give up pos"<<pos<<endl;
         lowNodes[pos]=0;
     }
     
     
-
+    //just for curiousity
     
-//    cout<<"fixed uv"<<endl;
-//    vector_statstic(&fuv);
+//    for(int i=0;i<nv;i++){
+//        if(lowNodes[i]!=0){
+//            double val=lowNodes[i];
+//            val/=VECTOR(ruv)[i];
+//           // val*=1-VECTOR(ruv)[i];
+//            lowNodes[i]=val;
+//        }
+//    }
+    
+    
+  //  write_vector_file(&fuv, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/reliablityNode/nodechoic.txt");
+    
     
     discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
     uniform_real_distribution<double> unDist(0.0,1.0);
@@ -1912,13 +1924,13 @@ UncertainGraph UncertainGraph::generateObfuscation(igraph_real_t sigma, igraph_r
 
 UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     
-    igraph_real_t sigmaLow, sigmaUpper;
+    igraph_real_t sigmaLow, sigmaUpper, final_sigma;
     igraph_real_t ep_res, tEpsilion;
     
     UncertainGraph tGraph((igraph_integer_t)nv);
     
     sigmaLow=0;
-    sigmaUpper=1; // this is one can be claimed by coders for speeding up the execution
+    sigmaUpper=0.25; // this is one can be claimed by coders for speeding up the execution
     
     
     while(true){
@@ -1938,15 +1950,21 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     }
     // sigmaupper pass , sigmaUpper
     
-    while((sigmaUpper-sigmaLow)<0.00001 ){
-        cout<<"random search for sigmaUpper="<<sigmaUpper<<endl;
+    final_sigma=sigmaUpper;
+    
+    while((sigmaUpper-sigmaLow)>0.00001 ){
+        
         igraph_real_t sigma_mid=(sigmaUpper+sigmaLow)/2;
+        cout<<"random search for sigmaUpper="<<sigma_mid<<endl;
         ep_res=1;
-        UncertainGraph pGraph=generateObfuscation(sigmaUpper, &ep_res, ak);
+        UncertainGraph pGraph=generateObfuscation(sigma_mid, &ep_res, ak);
         if(ep_res>=epsilon){
             sigmaLow=sigma_mid;
         }else{
             tGraph=pGraph;
+            if(sigma_mid<final_sigma){
+                final_sigma=sigma_mid;
+            }
             sigmaUpper=sigma_mid;
             tEpsilion=ep_res;
         }
@@ -1958,7 +1976,7 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
         
     }
     
-    cout<<"inject perturbation sigma :"<<sigmaUpper<<endl;
+    cout<<"inject perturbation sigma :"<<final_sigma<<endl;
     cout<<"tolerance level epislion:"<<tEpsilion<<endl;
     
     return tGraph;
