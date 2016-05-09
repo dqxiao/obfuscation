@@ -224,7 +224,7 @@ void randomPerturbationTest(){
     igraph_real_t eps_res,sigma;
     igraph_vector_init(&ak,nv);
     ug.getDegrees(true, &ak);
-   // ug.testAgaist(&ak);
+    
   
     sigma=1;
     
@@ -257,9 +257,9 @@ void greedyPerturbationTest(){
     string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
     string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/greedy_dblp_ob";
     igraph_real_t eps_res,sigma;
-    //sigma=1;
     
-    string utiltySetting="EE"; // existing edges p(e)
+    
+    string utiltySetting="EE_EX"; // existing edges p(e)
     
     string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"search"+utiltySetting+".txt" ;// setting suffix ;
     
@@ -278,9 +278,9 @@ void greedyPerturbationTest(){
     
     
     
-    
-   // UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
-    UncertainGraph tpg=ug.obfuscation(&ak);
+   // sigma=0.0625;
+    //UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+   UncertainGraph tpg=ug.obfuscation(&ak);
     
     
     
@@ -310,6 +310,13 @@ void generateReliablity(){
    // datasets.push_back("greedy_dblp_ob_c1.500000_k300_sigma1000.000000");
     //datasets.push_back("rand_dblp_ob_c1.700000_k300");
   //  datasets.push_back("greedy_dblp_ob_c1.500000_k300_sigma1.000000EE");
+    
+   // datasets.push_back("greedy_dblp_ob_c1.500000_k300searchEE");
+   // datasets.push_back("greedy_dblp_ob_c1.500000_k200searchEE");
+    
+    //datasets.push_back("greedy_dblp_ob_c1.500000_k100searchEE");
+    datasets.push_back("greedy_dblp_ob_c1.100000_k60searchEE");
+    
     
     
     for(string dataset: datasets){
@@ -610,14 +617,14 @@ int main(int argc, char *argv[]){
    // reliablityComparision();
  //   testObfuscation();
 //    reliablityUtiltyTest();
- //randomPerturbationTest();
-    greedyPerturbationTest();
+    randomPerturbationTest();
+   // greedyPerturbationTest();
   //  randomPerturbationTest_traffic();
     
     
     
     
-   //generateReliablity();
+   // generateReliablity();
    // generateInReliablity();
     
     

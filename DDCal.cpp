@@ -261,7 +261,6 @@ void reverseVector(igraph_vector_t * ruv){
         igraph_vector_set(ruv,i,val);
     }
     
-    // done
 }
 
 

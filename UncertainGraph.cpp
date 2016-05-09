@@ -1952,7 +1952,7 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     
     final_sigma=sigmaUpper;
     
-    while((sigmaUpper-sigmaLow)>0.00001 ){
+    while((sigmaUpper-sigmaLow)>0.001 ){
         
         igraph_real_t sigma_mid=(sigmaUpper+sigmaLow)/2;
         cout<<"random search for sigmaUpper="<<sigma_mid<<endl;
@@ -2214,7 +2214,7 @@ UncertainGraph init_uncertain_from_file(string filepath){
     
     //double * parray=edge_prob.data();
     
-    cout<<"init edge probs:"<<edge_prob.size()<<endl;
+    //cout<<"init edge probs:"<<edge_prob.size()<<endl;
     //igraph_vector_view(&e_probs, parray, edge_prob.size());
     igraph_vector_init(&e_probs,edge_prob.size());
     
