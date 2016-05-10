@@ -203,7 +203,7 @@ void randomPerturbationTest(){
 //    foption=mutiply;
     
     c=1.5;
-    attempt=5;
+    attempt=1;
     epsilon=0.0001;
     noise=0.01;
     k=300;
@@ -233,7 +233,7 @@ void randomPerturbationTest(){
     
     
     
-    tpg.print_graph(obFilePath+ssufix);
+    //tpg.print_graph(obFilePath+ssufix);
     
    
 
@@ -276,15 +276,16 @@ void greedyPerturbationTest(){
     ug.getDegrees(true, &ak);
     // ug.testAgaist(&ak);
     
+   
     
     
-   // sigma=0.0625;
-    //UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
-   UncertainGraph tpg=ug.obfuscation(&ak);
+    sigma=0.0625;
+    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+   //UncertainGraph tpg=ug.obfuscation(&ak);
     
     
     
-    tpg.print_graph(obFilePath+ssufix);
+    //tpg.print_graph(obFilePath+ssufix);
     
     
     
@@ -617,8 +618,8 @@ int main(int argc, char *argv[]){
    // reliablityComparision();
  //   testObfuscation();
 //    reliablityUtiltyTest();
-    randomPerturbationTest();
-   // greedyPerturbationTest();
+   // randomPerturbationTest();
+    greedyPerturbationTest();
   //  randomPerturbationTest_traffic();
     
     

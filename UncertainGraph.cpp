@@ -1177,7 +1177,12 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     double unique_sigma=0.4;
     sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
     printf("finish the computation \n");
+
     
+    
+//    write_vector_file(&uv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/random_uniquessV.txt");
+//    igraph_vector_t debugNode;
+//    igraph_vector_init(&debugNode,nv);
     
     
     int skip_count=(int) lround(epsilon*nv/2)+1;
@@ -1194,7 +1199,12 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
     for(int i=0;i<skip_count;i++){
         Node_UN  nu=nodeUNs[i];
         long int pos=nu.nodeID;
+        cout<<"uniq:"<<nu.node_comm<<endl;
+        
         lowNodes[pos]=0;
+        
+    
+       // igraph_vector_set(&debugNode, pos,0); // set the debugNode choice as zero
     }
     
     discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
@@ -1283,11 +1293,13 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
                 swap(u,v);
             }
             
-            double pickP=unDist(gen);
-
-        
-            double p_uv=0;
+            // debugging
+//            igraph_vector_set(&debugNode,u,VECTOR(debugNode)[u]+1);
+//            igraph_vector_set(&debugNode,v,VECTOR(debugNode)[v]+1);
             
+            
+            double pickP=unDist(gen);
+            double p_uv=0;
             auto search=EIndicator.find(Edge(u,v));
             if(search!=EIndicator.end()){
                 p_uv=search->second;
@@ -1360,6 +1372,9 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
             
         }
         
+        
+        
+        
        
         printf("finish edge selection:%li edges \n", k);
         printf("select edge from existing edge :%li\n",exist);
@@ -1373,7 +1388,7 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
             throw std::exception();
         }
         
-        
+//        write_vector_file(&debugNode, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/random_nodeChoice.txt");
         
         igraph_vector_init(&ue,ce);
         igraph_vector_init(&tpe,ce);
@@ -1540,8 +1555,11 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
     printf("finish the computation \n");
     
- 
-    
+    write_vector_file(&uv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_uniquessV.txt");
+    igraph_vector_t debugNode, QV;
+    igraph_vector_init(&debugNode,nv);
+    igraph_vector_init(&QV,nv);
+//
     
     igraph_vector_t ruv;
     igraph_vector_init(&ruv,nv);
@@ -1549,6 +1567,7 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     
     
     
+    write_vector_file(&ruv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_relSensV.txt");
     
     
     
@@ -1564,9 +1583,10 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
         
         nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],val));
         lowNodes.push_back(val);
+        igraph_vector_set(&QV,i,val);
     }
     
-    // for debugging
+ 
    
     
     
@@ -1577,22 +1597,13 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
         long int pos=nu.nodeID;
        // cout<<"give up pos"<<pos<<endl;
         lowNodes[pos]=0;
+        igraph_vector_set(&QV,pos,0); // clear
     }
     
     
-    //just for curiousity
-    
-//    for(int i=0;i<nv;i++){
-//        if(lowNodes[i]!=0){
-//            double val=lowNodes[i];
-//            val/=VECTOR(ruv)[i];
-//           // val*=1-VECTOR(ruv)[i];
-//            lowNodes[i]=val;
-//        }
-//    }
-    
-    
-  //  write_vector_file(&fuv, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/reliablityNode/nodechoic.txt");
+    // just for debugging
+    write_vector_file(&QV,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_QV.txt");
+  
     
     
     discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
@@ -1681,11 +1692,12 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
                 swap(u,v);
             }
             
+            igraph_vector_set(&debugNode, u, VECTOR(debugNode)[u]+1);
+            igraph_vector_set(&debugNode, v, VECTOR(debugNode)[v]+1);
+            
+            
             double pickP=unDist(gen);
-            
-            
             double p_uv=0;
-            
             auto search=EIndicator.find(Edge(u,v));
             if(search!=EIndicator.end()){
                 p_uv=search->second;
@@ -1771,6 +1783,8 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
         }
         
         
+//        write_vector_file(&debugNode, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_nodeChoice.txt");
+
         
         igraph_vector_init(&ue,ce);
         igraph_vector_init(&tpe,ce);
