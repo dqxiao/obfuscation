@@ -59,6 +59,7 @@ void normal_cal(const igraph_vector_t * input, igraph_vector_t *res, long int de
             cout<<"p"<<p<<endl;
             throw std::exception();
         }
+        
         sigma+=p*(1-p);
     }
     
@@ -204,9 +205,13 @@ double cal_relative_error_vector(igraph_vector_t * ref, igraph_vector_t * test){
     for(long int i=0;i<refLen;i++){
         double mean_error=std::abs((double)VECTOR(*ref)[i]-(double)VECTOR(*test)[i]);
         
-        double rel_error=mean_error/std::max((double)VECTOR(*ref)[i], (double)VECTOR(*test)[i]);
+        double maxVal=std::max((double)VECTOR(*ref)[i], (double)VECTOR(*test)[i]);
+        if(maxVal!=0){
+            double rel_error=mean_error/maxVal;
+            relError+=rel_error;
+        }
         
-        relError+=rel_error;
+        
         
     }
     
@@ -235,6 +240,14 @@ void is_sparese(igraph_vector_t * input, long int nv){
 }
 
 
+void reDistribute(igraph_vector_t * uv){
+    
+    double valSum=igraph_vector_sum(uv);
+    igraph_vector_scale(uv, 1.0/valSum);
+    
+}
+
+
 void reverseVector(igraph_vector_t * ruv){
     
     double minVal=igraph_vector_min(ruv);
@@ -253,9 +266,6 @@ void reverseVector(igraph_vector_t * ruv){
         double val=VECTOR(*ruv)[i];
         
         val=(val-minVal)/diff; // into 0,1
-        
-      
-        
         //val=boost::math::pdf(ns,val);
         
         igraph_vector_set(ruv,i,val);
@@ -264,15 +274,17 @@ void reverseVector(igraph_vector_t * ruv){
 }
 
 
+
+
 double featureCombine(double uniq, double robust){
     //option 1: mutilple
-    
     if(foption==mutiply){
         return uniq*robust;
-    }else{
-        return uniq;
     }
-    
+    if(foption==fplus){
+        return uniq+fplusParmater*robust;
+    }
+    return uniq;
 }
 
 

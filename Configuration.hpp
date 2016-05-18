@@ -11,6 +11,8 @@
 
 #include <stdio.h>
 
+
+
 extern int k;
 extern double c;
 extern int attempt;
@@ -22,10 +24,14 @@ extern bool uncertain;
 
 
 enum Option {randPert=1,greedPert=2};
+enum WorkDataset {dblp=1, hepth=2};
 
-enum FeatureCombineOption {mutiply=1,plus=2};
+
+enum FeatureCombineOption {mutiply=1,fplus=2};
+extern double fplusParmater;
 
 extern Option option;
 extern FeatureCombineOption foption;
+extern WorkDataset w_dataset;
 
 #endif /* Configuration_hpp */

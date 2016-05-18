@@ -72,7 +72,7 @@ public:
     
     
     
-    UncertainGraph obfuscation(igraph_vector_t *ak); // used for uncertain graph obfuscation
+    UncertainGraph obfuscation(igraph_vector_t *ak, double * finalSigma); // used for uncertain graph obfuscation
 
    
     

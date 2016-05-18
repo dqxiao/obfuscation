@@ -35,7 +35,7 @@ long int permuateCal(long int number);
 
 void is_sparese(igraph_vector_t * input, long int nv);
 
-
+void reDistribute(igraph_vector_t * uv);
 void reverseVector(igraph_vector_t * ruv);
 
 double featureCombine(double uniq, double robust);

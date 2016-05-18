@@ -27,6 +27,9 @@ char delimiter;
 int sampleNum;
 Option option;
 FeatureCombineOption foption;
+double fplusParmater;
+bool debug;
+WorkDataset w_dataset;
 
 
 
@@ -72,32 +75,50 @@ void testObfuscation(){
     
 }
 
-void reliablityComparision(){
+void reliablityComparision(string dataset){
     
-    string relfoler="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/";
+    string relfoler="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/"+dataset+"/";
     
     
+    long int nv=0;
     
-    string refdata="inpg_rel";
-    long int nv=824774;
+    if(dataset=="hepth"){
+        nv=14318;
+    }
+    if(dataset=="dblp"){
+        nv=824774;
+    }
+    
+    string refdata="ref_rel";
+   
     
     vector<string> datasets;
     
-//    datasets.push_back("rand_dblp_ob_c1.100000_k100_rel");
-//    datasets.push_back("rand_dblp_ob_c1.100000_k60_rel");
-//    datasets.push_back("rand_dblp_ob_c1.300000_k200_rel");
-
+    if(dataset=="hepth"){
+        datasets.push_back("rand_ob_c1.100000_k60_sigma0.000977");
+        datasets.push_back("rand_ob_c1.300000_k100_sigma0.250000");
+        datasets.push_back("rand_ob_c1.700000_k200_sigma17.125977");
+        datasets.push_back("rand_ob_c3.000000_k300_sigma1.875977");
+        
+        
+        datasets.push_back("greedy_ob_c1.100000_k60_sigma0.009766");
+        datasets.push_back("greedy_ob_c1.300000_k100_sigma0.091797");
+        datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
+        datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
+       
+        datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
+        datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
+        datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
+        datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+    }
     
-//    datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob_rel");
-//    datasets.push_back("GREEDY1-1_dblpc3.000000_k200_ob_rel");
-//    datasets.push_back("GREEDY5-1_dblpc2.000000_k100_ob_rel");
-    
-     // datasets.push_back("greedy_dblp_ob_c1.500000_k300_rel");
- //   datasets.push_back("rand_dblp_ob_c1.500000_k300_rel");
-   // datasets.push_back("greedy_dblp_ob_c1.500000_k300_sigma1000.000000_rel");
-  //  datasets.push_back("rand_dblp_ob_c1.700000_k300_rel");
-    
-    datasets.push_back("greedy_dblp_ob_c1.500000_k300_sigma1.000000EE_rel");
+    if(dataset=="dblp"){
+        datasets.push_back("GREEDY5-1_dblpc2.000000_k60_ob");
+        datasets.push_back("GREEDY5-1_dblpc2.000000_k100_ob");
+        datasets.push_back("GREEDY1-1_dblpc3.000000_k200_ob");
+        datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob");
+        
+    }
     
     igraph_vector_t ref;
     igraph_vector_init(&ref,nv);
@@ -112,9 +133,9 @@ void reliablityComparision(){
         
         igraph_vector_init(&test,nv);
         
-        init_vector_file(&test, relfoler+dataset+".txt");
+        init_vector_file(&test, relfoler+dataset+"_rel.txt");
         
-        cout<<"Original vs" <<dataset<<endl;
+        cout<<"Original vs " <<dataset<<endl;
         
         cout<<"Mean Error"<<endl;
         
@@ -134,16 +155,15 @@ void reliablityComparision(){
 
 }
 
-void reliablityUtiltyTest(){
+void reliablityUtilty(string dataset){
     // uncertain graph
     delimiter='\t';
     sampleNum=10000;
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
-    string testFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/testUncertainGraph.txt";
-    string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/ruv_dblp.txt";
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/"+dataset+".txt";
+    string ruvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/"+dataset+"/reliablityNode/Node_EE.txt";
+    string euvPath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/"+dataset+"/reliablityNode/Edge_EE.txt";
     UncertainGraph ug=init_uncertain_from_file(filepath);
     
-   // Graph g(ug);
     
 
     
@@ -151,173 +171,199 @@ void reliablityUtiltyTest(){
 
     
     long int nv=ug.nv;
-//
-//
+    long int ne=ug.ne;
     
-    igraph_vector_t ruv,rel;
+    
+    igraph_vector_t r_edge,ruv;
+    
+    igraph_vector_init(&r_edge,ne);
     igraph_vector_init(&ruv,nv);
-//
-    igraph_vector_init(&rel,nv);
     
     
-    ug.reliablityUtilitySubgraph(&ruv);
-//    ug.reliablityUtiliy(&ruv);
-////
-////    
-////
-    vector_statstic(&ruv);
-//
+    ug.rawEstimate(&r_edge);
+    
+    ug.aggregateReliablutyDiffEE(&ruv, &r_edge);
+    
+    
+    write_vector_file(&r_edge, euvPath);
     write_vector_file(&ruv, ruvPath);
-//
+    
+    igraph_vector_destroy(&r_edge);
     igraph_vector_destroy(&ruv);
     
     
-    
-    
-    
-    // inverstigate degree
-    
-//    igraph_vector_t degres;
-//    igraph_vector_init(&degres,nv);
-//    
-//    g.degrees(&degres);
-//    string degfile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/deg_dblp.txt";
-//    vector_statstic(&degres);
-//    write_vector_file(&degres,degfile);
-//    
-//    igraph_vector_destroy(&degres);
-    
-    
-    
-    
-    
-    
-    
 }
 
-void randomPerturbationTest(){
+void randomPerturbation(string dataset){
     
     delimiter='\t';
-    option=randPert; // set the random option
-//    option=greedPert;
-//    foption=mutiply;
+    option=randPert;
     
-    c=1.5;
-    attempt=1;
-    epsilon=0.0001;
+    
+    
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/"+dataset+".txt";
+    
+    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/"+dataset+"/rand_ob";
+    
+
+    attempt=5;
+    epsilon=0.001; // different epsilon setting
     noise=0.01;
-    k=300;
+
     
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
-    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/rand_dblp_ob";
     
-    string ssufix="_c"+to_string(c)+"_k"+to_string(k)+".txt" ;// setting suffix ;
+    vector<int> ks;
+    vector<double> cs;
+    
+    ks.push_back(60);
+    ks.push_back(100);
+    ks.push_back(200);
+    ks.push_back(300);
+    
+    cs.push_back(1.1);
+    cs.push_back(1.3);
+    cs.push_back(1.7);
+    cs.push_back(3);
     
     
     UncertainGraph ug=init_uncertain_from_file(filepath);
-    
-    
-    
     long int nv=ug.nv;
     
     igraph_vector_t ak;
-    igraph_real_t eps_res,sigma;
     igraph_vector_init(&ak,nv);
     ug.getDegrees(true, &ak);
     
-  
-    sigma=1;
+    // self test
     
     
-    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
+    for(int i=0;i<ks.size();i++){
     
+        k=ks[i];
+        c=cs[i];
+       // ug.testAgaist(&ak);
+        double finalSigma=0;
+        UncertainGraph tpg=ug.obfuscation(&ak,&finalSigma);
+        string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"_sigma"+to_string(finalSigma)+".txt" ;// setting suffix ;
+      
+        tpg.print_graph(obFilePath+ssufix);
+    }
     
-    
-    //tpg.print_graph(obFilePath+ssufix);
-    
-   
-
     igraph_vector_destroy(&ak);
     
 
 }
 
-void greedyPerturbationTest(){
+void greedyPerturbation(string dataset){
     delimiter='\t';
-    //option=randPert; // set the random option
     option=greedPert;
     foption=mutiply;
     
-    c=1.5;
-    attempt=2;
-    epsilon=0.0001;
+    
+    
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/"+dataset+".txt";
+    
+    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/"+dataset+"/greedy_ob";
+    
+    
+    attempt=5;
+    epsilon=0.001; // different epsilon setting
     noise=0.01;
-    k=300;
-    
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
-    string obFilePath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/greedy_dblp_ob";
-    igraph_real_t eps_res,sigma;
     
     
-    string utiltySetting="EE_EX"; // existing edges p(e)
     
-    string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"search"+utiltySetting+".txt" ;// setting suffix ;
+    vector<int> ks;
+    vector<double> cs;
+    
+//    ks.push_back(60);
+//    ks.push_back(100);
+//    ks.push_back(200);
+//    ks.push_back(300);
+//
+////    cs.push_back(1.1);
+////    cs.push_back(1.3);
+//    cs.push_back(2);
+//    cs.push_back(3);
     
     
     UncertainGraph ug=init_uncertain_from_file(filepath);
-    
-    
-    
     long int nv=ug.nv;
     
     igraph_vector_t ak;
-    
     igraph_vector_init(&ak,nv);
     ug.getDegrees(true, &ak);
-    // ug.testAgaist(&ak);
     
-   
-    
-    
-    sigma=0.0625;
-    UncertainGraph tpg=ug.generateObfuscation(sigma, &eps_res, &ak);
-   //UncertainGraph tpg=ug.obfuscation(&ak);
+    // self test
     
     
-    
-    //tpg.print_graph(obFilePath+ssufix);
-    
-    
+    for(int i=0;i<ks.size();i++){
+        
+        k=ks[i];
+        c=cs[i];
+        // ug.testAgaist(&ak);
+        double finalSigma=0;
+        UncertainGraph tpg=ug.obfuscation(&ak, &finalSigma);
+        string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"_sigma"+to_string(finalSigma)+".txt" ;// setting suffix ;
+        
+        tpg.print_graph(obFilePath+ssufix);
+    }
     
     igraph_vector_destroy(&ak);
 
 }
 
-void generateReliablity(){
+void generateReliablityRef(string dataset){
+    delimiter='\t';
+    string infolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/";
+    string relfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/"+dataset+"/";
+    
+    long int nv=0;
+    if(dataset=="hepth"){
+        nv=14318;
+    }
+    
+    UncertainGraph ug=init_uncertain_from_file(infolder+dataset+".txt");
+    igraph_vector_t rv;
+    igraph_vector_init(&rv,nv);
+    
+    sampleNum=2000;
+    
+    ug.reliablity(&rv, relfolder+"ref"+"_rel.txt");
+    igraph_vector_destroy(&rv);
+}
+
+void generateReliablity(string dataset){
     
     delimiter='\t';
-    string obfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
-    string relfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/";
+    string obfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/"+dataset+"/";
+    string relfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/"+dataset+"/";
     
-    long int nv=824774;
+//    long int nv=824774;
+    
+    long int nv=0;
+    
+    if(dataset=="hepth"){
+        nv=14318;
+    }
+    if(dataset=="dblp"){
+        nv=824774;
+    }
     vector<string> datasets;
     
-//    datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob");
-//    datasets.push_back("rand_dblp_ob_c1.100000_k60");
-//    datasets.push_back("rand_dblp_ob_c1.300000_k200");
-//    datasets.push_back("rand_dblp_ob_c1.500000_k300");
-//    datasets.push_back("rand_dblp_ob_c1.100000_k100_rel");
-   // datasets.push_back("greedy_dblp_ob_c1.500000_k300");
-   // datasets.push_back("greedy_dblp_ob_c1.500000_k300_sigma1000.000000");
-    //datasets.push_back("rand_dblp_ob_c1.700000_k300");
-  //  datasets.push_back("greedy_dblp_ob_c1.500000_k300_sigma1.000000EE");
     
-   // datasets.push_back("greedy_dblp_ob_c1.500000_k300searchEE");
-   // datasets.push_back("greedy_dblp_ob_c1.500000_k200searchEE");
+//    datasets.push_back("rand_ob_c1.100000_k60_sigma0.000977");
+//    datasets.push_back("rand_ob_c1.300000_k100_sigma0.250000");
+//    datasets.push_back("rand_ob_c1.700000_k200_sigma17.125977");
+//    datasets.push_back("rand_ob_c3.000000_k300_sigma1.875977");
+//    
+//    datasets.push_back("greedy_ob_c1.100000_k60_sigma0.009766");
+//    datasets.push_back("greedy_ob_c1.300000_k100_sigma0.091797");
+//    datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
+//    datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
     
-    //datasets.push_back("greedy_dblp_ob_c1.500000_k100searchEE");
-    datasets.push_back("greedy_dblp_ob_c1.100000_k60searchEE");
-    
+    datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
+    datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
+    datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
+    datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
     
     
     for(string dataset: datasets){
@@ -353,10 +399,10 @@ void generateInReliablity(){
     
 }
 
-void basic_metric(){
+void basic_metric(string dataset){
     delimiter='\t';
     string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/";
-    string dataset="dblp";
+    //string dataset="hepth";
     
     UncertainGraph ug=init_uncertain_from_file(filepath+dataset+".txt");
     
@@ -435,42 +481,60 @@ void timeestimation(){
 }
 
 
-void certainObfuscation(){
+void certainObfuscation(string dataset,string repDataset){
     string folder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/output/";
-    string file="GREEDY5-1_dblp";
+
     
-    string obFolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/";
+    string obFolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/"+dataset+"/"+repDataset;
     
-    c=3;
-    attempt=1;
-    epsilon=0.0001;
+    
+    attempt=2;
+    epsilon=0.001;
     noise=0.01;
-    k=300;
+ 
+
+    vector<int> ks;
+    vector<double> cs;
+    
+    ks.push_back(60);
+    ks.push_back(100);
+    ks.push_back(200);
+    ks.push_back(300);
+    
+    cs.push_back(2);
+    cs.push_back(2);
+    cs.push_back(3);
+    cs.push_back(3);
+    
     delimiter=' ';
-    
-    Graph g=init_from_Adj_File(folder+file+".txt");
-    
-    string suffix="c"+to_string(c)+"_k"+to_string(k)+"_ob.txt";
-    
-    
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
+    Graph g=init_from_Adj_File(folder+repDataset+".txt");
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/"+dataset+".txt";
     delimiter='\t';
     UncertainGraph ug=init_uncertain_from_file(filepath);
     
+    
+    
     igraph_vector_t ak;
     igraph_vector_init(&ak,ug.nv);
-    ug.getDegrees(false, &ak);
+    ug.getDegrees(true, &ak);
     
     
-
+    for(int i=0;i<ks.size();i++){
+        k=ks[i];
+        c=cs[i];
+        
+//        g.testAgaist(&ak, k);
+        
+        double finalSigma=0;
+        UncertainGraph tpg=g.obfuscation(&ak,&finalSigma);
+        string suffix="c"+to_string(c)+"_k"+to_string(k)+"sigma"+to_string(finalSigma)+"_ob.txt";
+        
+        tpg.print_graph(obFolder+suffix);
+        
+    }
     
-   // g.selfTest(k);
-    double sigma=32;
-    double esp_res=1;
-    //UncertainGraph tpg=g.generateObfuscation(sigma, &esp_res);
-    UncertainGraph tpg=g.generateObfuscation(sigma, &esp_res, &ak);
     
-    tpg.print_graph(obFolder+file+suffix);
+    igraph_vector_destroy(&ak);
     
 }
 
@@ -606,35 +670,28 @@ void testAgaist(){
 }
 
 // change into script version later
+
+
+
 int main(int argc, char *argv[]){
     
+//    string dataset="hepth";
+//    string repDataset="GREEDY5-1_hepth";
+//    w_dataset=hepth;
     
+    //basic_metric(dataset);
+    //randomPerturbation(dataset);
+   // reliablityUtilty(dataset);
+     // generateReliablityRef(dataset);
     
+   // greedyPerturbation(dataset);
+    //  certainObfuscation(dataset,repDataset);
+      //generateReliablity(dataset);
+    //reliablityComparision(dataset);
     
+    string dataset="dblp";
+    reliablityComparision(dataset);
+  
     
-
-   // graphTest();
-   // graphCastTest();
-   // reliablityComparision();
- //   testObfuscation();
-//    reliablityUtiltyTest();
-   // randomPerturbationTest();
-    greedyPerturbationTest();
-  //  randomPerturbationTest_traffic();
-    
-    
-    
-    
-   // generateReliablity();
-   // generateInReliablity();
-    
-    
-   // basic_metric();
-    //exact_reliablityComparision();
-    //timeestimation();
-    //certainObfuscation();
-    
-    //nullEdgeReliablity();
-   // testAgaist();
     return 0;
 }

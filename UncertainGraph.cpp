@@ -240,7 +240,6 @@ void UncertainGraph::rawEstimate(igraph_vector_t *r_edge){
         
         
         nvp=(double)nvp/nv;
-        //nvp=(double)nvp/(nv-1);
         nvp*=p;
         
         
@@ -302,15 +301,6 @@ void UncertainGraph::rawEstimate(igraph_vector_t *r_edge){
     }
 
     
-//    string debugFile="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/edgeReliablityDiff.txt";
-//    cout<<"write the reliablity diff of each edge"<<endl;
-//    write_vector_file(r_edge, debugFile);
-//    cout<<"statsitc about the reliablity of edges"<<endl;
-//    vector_statstic(r_edge);
-//    long int pos=igraph_vector_which_max(r_edge);
-//    cout<<"the max val is gained by this position"<<pos<<endl;
-//    cout<<"prob of edge:"<<VECTOR(peOb)[pos]<<endl;
-//    cout<<"prob of edge real:"<<VECTOR(pe)[pos]<<endl;
     
     igraph_vector_destroy(&e_edge);
     igraph_vector_destroy(&n_edge);
@@ -694,13 +684,22 @@ void UncertainGraph::reliablityUtilitySubgraph(igraph_vector_t *ruv){
 
 void UncertainGraph::reliablityUtiliyInit(igraph_vector_t *ruv){
     
-    // file path
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/reliablityNode/nodeRelDiff_E.txt";
+    if(w_dataset==dblp){
+        string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/dblp/reliablityNode/nodeRelDiff_E.txt";
     
-    init_vector_file(ruv, filepath);
-    reverseVector(ruv);
-    cout<<"reverse reliablity utility vector"<<endl;
-    vector_statstic(ruv);
+        init_vector_file(ruv, filepath);
+        reverseVector(ruv);
+        cout<<"reverse reliablity utility vector"<<endl;
+        vector_statstic(ruv);
+    }
+    
+    if(w_dataset==hepth){
+        string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/relOutput/hepth/reliablityNode/Node_EE.txt";
+        init_vector_file(ruv, filepath);
+        reverseVector(ruv);
+        cout<<"reverse reliablity utility vector"<<endl;
+        vector_statstic(ruv);
+    }
     
     // done
 }
@@ -1555,10 +1554,10 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     sigmaUniquess(&uv, *ak, maxDegree, unique_sigma);
     printf("finish the computation \n");
     
-    write_vector_file(&uv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_uniquessV.txt");
-    igraph_vector_t debugNode, QV;
-    igraph_vector_init(&debugNode,nv);
-    igraph_vector_init(&QV,nv);
+    //write_vector_file(&uv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_uniquessV_fix.txt");
+//    igraph_vector_t debugNode, QV;
+//    igraph_vector_init(&debugNode,nv);
+//    igraph_vector_init(&QV,nv);
 //
     
     igraph_vector_t ruv;
@@ -1567,7 +1566,7 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     
     
     
-    write_vector_file(&ruv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_relSensV.txt");
+  // write_vector_file(&ruv,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_relSensV_fix.txt");
     
     
     
@@ -1577,13 +1576,15 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
     igraph_vector_t  fuv;
     igraph_vector_init(&fuv,nv);
     
+   // reDistribute(&uv);
+    
     for(long int i=0;i<nv;i++){
         
        double val=featureCombine(VECTOR(uv)[i], VECTOR(ruv)[i]);
         
         nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],val));
         lowNodes.push_back(val);
-        igraph_vector_set(&QV,i,val);
+       // igraph_vector_set(&QV,i,val);
     }
     
  
@@ -1597,12 +1598,20 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
         long int pos=nu.nodeID;
        // cout<<"give up pos"<<pos<<endl;
         lowNodes[pos]=0;
-        igraph_vector_set(&QV,pos,0); // clear
+       // igraph_vector_set(&QV,pos,0); // clear
     }
     
     
+//    for(int i=0;i<nv;i++){
+//        double val=VECTOR(QV)[i];
+//        if(val!=0){
+//            val-=fplusParmater*VECTOR(ruv)[i];
+//            lowNodes[i]=val;
+//        }
+//    }
+    
     // just for debugging
-    write_vector_file(&QV,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_QV.txt");
+   // write_vector_file(&QV,"/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_QV.txt");
   
     
     
@@ -1692,8 +1701,8 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
                 swap(u,v);
             }
             
-            igraph_vector_set(&debugNode, u, VECTOR(debugNode)[u]+1);
-            igraph_vector_set(&debugNode, v, VECTOR(debugNode)[v]+1);
+//            igraph_vector_set(&debugNode, u, VECTOR(debugNode)[u]+1);
+//            igraph_vector_set(&debugNode, v, VECTOR(debugNode)[v]+1);
             
             
             double pickP=unDist(gen);
@@ -1783,7 +1792,7 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
         }
         
         
-//        write_vector_file(&debugNode, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_nodeChoice.txt");
+//        write_vector_file(&debugNode, "/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/progTest/vectorlog/greedy_nodeChoice_fix.txt");
 
         
         igraph_vector_init(&ue,ce);
@@ -1936,7 +1945,7 @@ UncertainGraph UncertainGraph::generateObfuscation(igraph_real_t sigma, igraph_r
     }
 }
 
-UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
+UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak,double * finalSigma){
     
     igraph_real_t sigmaLow, sigmaUpper, final_sigma;
     igraph_real_t ep_res, tEpsilion;
@@ -1944,7 +1953,7 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
     UncertainGraph tGraph((igraph_integer_t)nv);
     
     sigmaLow=0;
-    sigmaUpper=0.25; // this is one can be claimed by coders for speeding up the execution
+    sigmaUpper=1; // this is one can be claimed by coders for speeding up the execution
     
     
     while(true){
@@ -1984,14 +1993,12 @@ UncertainGraph UncertainGraph::obfuscation(igraph_vector_t *ak){
         }
         
         
-        
-        
-        
-        
     }
     
     cout<<"inject perturbation sigma :"<<final_sigma<<endl;
     cout<<"tolerance level epislion:"<<tEpsilion<<endl;
+    
+    *finalSigma=(double)final_sigma;
     
     return tGraph;
 }

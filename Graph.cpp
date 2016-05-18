@@ -436,23 +436,70 @@ void Graph::selfTest(int k){
     igraph_vector_destroy(&expectDeg);
 }
 
-/**
- *
- */
+
+
+
 void Graph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma){
-    igraph_vector_t s_com,freqs,degrees;
+//    igraph_vector_t s_com,freqs,degrees;
+//    
+//    normal ns(0,sigma);
+//    
+//    igraph_vector_init(&freqs,maxDegree+1);
+//    igraph_vector_init(&s_com,maxDegree+1);
+//    igraph_vector_init(&degrees,nv);
+//    
+//    igraph_degree(&graph, &degrees, igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
+//    
+//    for(long int i=0;i<nv;i++){
+//        long int degree=VECTOR(degrees)[i];
+//        igraph_vector_set(&freqs, degree, VECTOR(freqs)[degree]+1);
+//    }
+//    
+//    // when sigma is very small
+//    // it approximate count the number of nodes with the same degree
+//    // iterate over all nodes
+//    for(long int i=0;i<maxDegree+1;i++){
+//        igraph_real_t val=0.0;
+//        for(long int j=0;j<maxDegree+1;j++){
+//            double d=cal_distance(i, j);
+//            double tmp=boost::math::pdf(ns,d);
+//            if(tmp==0 || d==1){
+//                tmp=numeric_limits<double>::epsilon();
+//            }
+//            tmp*=VECTOR(freqs)[j];
+//            val+=tmp;
+//        }
+//        
+//        igraph_vector_set(&s_com,i,1.0/val);
+//    }
+//    
+//    // map use adversary knowledge
+//    for(long int i=0;i<nv;i++){
+//        long int degree=VECTOR(ak)[i];
+//        igraph_vector_set(uv,i,VECTOR(s_com)[degree]);
+//    }
+//    
+//    
+//    igraph_vector_destroy(&s_com);
+//    igraph_vector_destroy(&freqs);
+    
+    
+    igraph_vector_t s_com,freqs;
+    //igraph_vector_t degrees;
+    
+    
     
     normal ns(0,sigma);
     
     igraph_vector_init(&freqs,maxDegree+1);
     igraph_vector_init(&s_com,maxDegree+1);
-    igraph_vector_init(&degrees,nv);
+    // igraph_vector_init(&degrees,nv);
     
-    igraph_degree(&graph, &degrees, igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
+    
     
     for(long int i=0;i<nv;i++){
-        long int degree=VECTOR(degrees)[i];
-        igraph_vector_set(&freqs, degree, VECTOR(freqs)[degree]+1);
+        long int val=VECTOR(ak)[i];
+        igraph_vector_set(&freqs,val,VECTOR(freqs)[val]+1);
     }
     
     // when sigma is very small
@@ -463,9 +510,9 @@ void Graph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_
         for(long int j=0;j<maxDegree+1;j++){
             double d=cal_distance(i, j);
             double tmp=boost::math::pdf(ns,d);
-            if(tmp==0 || d==1){
-                tmp=numeric_limits<double>::epsilon();
-            }
+            //            if(tmp==0 || d==1){
+            //                tmp=numeric_limits<double>::epsilon();
+            //            }
             tmp*=VECTOR(freqs)[j];
             val+=tmp;
         }
@@ -473,15 +520,15 @@ void Graph::sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_
         igraph_vector_set(&s_com,i,1.0/val);
     }
     
-    // map use adversary knowledge
+    
+    
+    
+    
     for(long int i=0;i<nv;i++){
         long int degree=VECTOR(ak)[i];
         igraph_vector_set(uv,i,VECTOR(s_com)[degree]);
     }
-    
-    
-    igraph_vector_destroy(&s_com);
-    igraph_vector_destroy(&freqs);
+
 }
 
 
@@ -507,7 +554,8 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
     
     
     printf("start the computation of the sigma-uniqueness of all V \n");
-    double sigma_uniques=std::min(0.01,sigma);
+    //double sigma_uniques=std::min(0.01,sigma);
+    double sigma_uniques=sigma;
     sigmaUniquess(&uv, *ak, maxDegree, sigma_uniques);
     printf("finish the computation \n");
     
@@ -794,7 +842,10 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
                 old_p_e=search->second;
             }
             
-//            double old_p_e=EIndicator(from,to);
+            if(re==0){
+                throw std::exception();
+                
+            }
             
             if(old_p_e==0){
                 igraph_vector_set(&pe, i, re);
@@ -866,13 +917,14 @@ UncertainGraph Graph::obfuscation(){
     igraph_vector_t degrees;
     igraph_vector_init(&degrees, nv);
     igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL,IGRAPH_LOOPS);
-    UncertainGraph tpg=obfuscation(&degrees);
+    double finalSigma=0;
+    UncertainGraph tpg=obfuscation(&degrees, &finalSigma);
     igraph_vector_destroy(&degrees);
     return tpg;
 }
 
 
-UncertainGraph Graph::obfuscation(igraph_vector_t * ak){
+UncertainGraph Graph::obfuscation(igraph_vector_t * ak, double * finalSigma){
     igraph_real_t sigmaLow, sigmaUpper;
     igraph_real_t ep_res, tEpsilion;
     
@@ -924,6 +976,8 @@ UncertainGraph Graph::obfuscation(igraph_vector_t * ak){
     
     cout<<"inject perturbation sigma :"<<final_sigma<<endl;
     cout<<"tolerance level epislion:"<<tEpsilion<<endl;
+    
+    *finalSigma=final_sigma;
     
     return tGraph;
 }

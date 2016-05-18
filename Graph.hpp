@@ -63,9 +63,7 @@ public:
     
     // obfucation against adversary knowledge
     UncertainGraph generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);
-    UncertainGraph obfuscation(igraph_vector_t *ak);
-    
-    
+    UncertainGraph obfuscation(igraph_vector_t *ak, double * finalSigma);
     
     // graph I/O
     void print_graph(string filepath);
