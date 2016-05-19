@@ -1448,11 +1448,15 @@ UncertainGraph UncertainGraph::randomGenerateObfuscation(igraph_real_t sigma, ig
             if(w<noise){
                 re=unGenDist(sgen);
                 unCount+=1;
-                re*=(2*(0.5-old_p_e));
+                //re-=old_p_e;
+               re*=(2*(0.5-old_p_e));
             }else{
-                re=truncated_normal_ab_sample(0.0, sigma_e, 0.0, 1.0, seed);
+                double a=0.0;
+                double b=1.0;
+//                double a=-1*old_p_e;
+//                double b=1-old_p_e;
+                re=truncated_normal_ab_sample(0.0, sigma_e, a,b, seed);
                 re*=(2*(0.5-old_p_e));
-                
             }
             
             // generate the solution
@@ -1584,7 +1588,7 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
         
         nodeUNs.push_back(Node_UN(i,VECTOR(degrees)[i],val));
         lowNodes.push_back(val);
-       // igraph_vector_set(&QV,i,val);
+        //igraph_vector_set(&QV,i,val);
     }
     
  
@@ -1605,7 +1609,7 @@ UncertainGraph UncertainGraph::greedyGenerateObfuscation(igraph_real_t sigma, ig
 //    for(int i=0;i<nv;i++){
 //        double val=VECTOR(QV)[i];
 //        if(val!=0){
-//            val-=fplusParmater*VECTOR(ruv)[i];
+//            double val=featureCombine(VECTOR(uv)[i], 1-VECTOR(ruv)[i]);
 //            lowNodes[i]=val;
 //        }
 //    }

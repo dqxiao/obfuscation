@@ -95,21 +95,22 @@ void reliablityComparision(string dataset){
     vector<string> datasets;
     
     if(dataset=="hepth"){
-        datasets.push_back("rand_ob_c1.100000_k60_sigma0.000977");
-        datasets.push_back("rand_ob_c1.300000_k100_sigma0.250000");
-        datasets.push_back("rand_ob_c1.700000_k200_sigma17.125977");
-        datasets.push_back("rand_ob_c3.000000_k300_sigma1.875977");
-        
-        
-        datasets.push_back("greedy_ob_c1.100000_k60_sigma0.009766");
-        datasets.push_back("greedy_ob_c1.300000_k100_sigma0.091797");
-        datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
-        datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
-       
-        datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
-        datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
-        datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
-        datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+//        datasets.push_back("rand_ob_c1.100000_k60_sigma0.000977");
+//        datasets.push_back("rand_ob_c1.300000_k100_sigma0.250000");
+//        datasets.push_back("rand_ob_c1.700000_k200_sigma17.125977");
+//        datasets.push_back("rand_ob_c3.000000_k300_sigma1.875977");
+//        
+//        
+//        datasets.push_back("greedy_ob_c1.100000_k60_sigma0.009766");
+//        datasets.push_back("greedy_ob_c1.300000_k100_sigma0.091797");
+//        datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
+//        datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
+//       
+//        datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
+//        datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
+//        datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
+//        datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+
     }
     
     if(dataset=="dblp"){
@@ -215,15 +216,15 @@ void randomPerturbation(string dataset){
     vector<int> ks;
     vector<double> cs;
     
-    ks.push_back(60);
-    ks.push_back(100);
-    ks.push_back(200);
-    ks.push_back(300);
+//    ks.push_back(60);
+//    ks.push_back(100);
+//    ks.push_back(200);
+//    ks.push_back(300);
     
-    cs.push_back(1.1);
-    cs.push_back(1.3);
-    cs.push_back(1.7);
-    cs.push_back(3);
+//    cs.push_back(1.1);
+//    cs.push_back(1.3);
+//    cs.push_back(1.7);
+//    cs.push_back(3);
     
     
     UncertainGraph ug=init_uncertain_from_file(filepath);
@@ -243,9 +244,10 @@ void randomPerturbation(string dataset){
        // ug.testAgaist(&ak);
         double finalSigma=0;
         UncertainGraph tpg=ug.obfuscation(&ak,&finalSigma);
+        string fprefix="BI";
         string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"_sigma"+to_string(finalSigma)+".txt" ;// setting suffix ;
       
-        tpg.print_graph(obFilePath+ssufix);
+        tpg.print_graph(obFilePath+fprefix+ssufix);
     }
     
     igraph_vector_destroy(&ak);
@@ -274,16 +276,21 @@ void greedyPerturbation(string dataset){
     vector<int> ks;
     vector<double> cs;
     
-//    ks.push_back(60);
-//    ks.push_back(100);
-//    ks.push_back(200);
-//    ks.push_back(300);
-//
-////    cs.push_back(1.1);
-////    cs.push_back(1.3);
-//    cs.push_back(2);
-//    cs.push_back(3);
+    if(dataset=="hepth"){
     
+        ks.push_back(60);
+        ks.push_back(100);
+        ks.push_back(200);
+        ks.push_back(300);
+    //
+        cs.push_back(1.1);
+        cs.push_back(1.3);
+        cs.push_back(2);
+        cs.push_back(3);
+    }
+    
+    
+   
     
     UncertainGraph ug=init_uncertain_from_file(filepath);
     long int nv=ug.nv;
@@ -302,9 +309,10 @@ void greedyPerturbation(string dataset){
         // ug.testAgaist(&ak);
         double finalSigma=0;
         UncertainGraph tpg=ug.obfuscation(&ak, &finalSigma);
+        string fsufix="ER"; // ER: existing
         string ssufix="_c"+to_string(c)+"_k"+to_string(k)+"_sigma"+to_string(finalSigma)+".txt" ;// setting suffix ;
         
-        tpg.print_graph(obFilePath+ssufix);
+        tpg.print_graph(obFilePath+fsufix+ssufix);
     }
     
     igraph_vector_destroy(&ak);
@@ -360,10 +368,14 @@ void generateReliablity(string dataset){
 //    datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
 //    datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
     
-    datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
-    datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
-    datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
-    datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+//    datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
+//    datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
+//    datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
+//    datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+    
+    
+   // datasets.push_back("greedy_obER_c3.000000_k300_sigma1.749023");
+    datasets.push_back("rand_obBI_c3.000000_k300_sigma2.170898");
     
     
     for(string dataset: datasets){
@@ -675,9 +687,9 @@ void testAgaist(){
 
 int main(int argc, char *argv[]){
     
-//    string dataset="hepth";
+   // string dataset="hepth";
 //    string repDataset="GREEDY5-1_hepth";
-//    w_dataset=hepth;
+   // w_dataset=hepth;
     
     //basic_metric(dataset);
     //randomPerturbation(dataset);
@@ -686,11 +698,14 @@ int main(int argc, char *argv[]){
     
    // greedyPerturbation(dataset);
     //  certainObfuscation(dataset,repDataset);
-      //generateReliablity(dataset);
+    //generateReliablity(dataset);
     //reliablityComparision(dataset);
     
-    string dataset="dblp";
-    reliablityComparision(dataset);
+//    string dataset="dblp";
+//    reliablityComparision(dataset);
+    
+    string dataset="DBLP";
+    greedyPerturbation(dataset);
   
     
     return 0;
