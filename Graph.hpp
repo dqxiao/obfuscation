@@ -35,7 +35,9 @@ public:
     // graph property
     long int getNE(void);
     void graphStatstic(void);
-    void metric(igraph_vector_t *res, double p); // used for uncertain graph for cal AD
+
+    void degreeMetric(igraph_vector_t *res,double p); 
+    void metric(igraph_vector_t *res,double p);
     void degrees(igraph_vector_t * degRes);
     
     

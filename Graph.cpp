@@ -47,7 +47,7 @@ Graph::Graph(UncertainGraph & obj){
 }
 
 Graph::~Graph(){
-    //cout<<"call graph deconstuction function"<<endl;
+   // cout<<"call graph deconstuction function"<<endl;
     igraph_destroy(&graph);
 }
 void Graph::set_edges(igraph_vector_t *edges){
@@ -77,6 +77,51 @@ void Graph::graphStatstic(){
     printf("NE\tAD\tMD\n");
     printf("%2f\t%2f\t%2f\n", nne,ad,md);
     igraph_vector_destroy(&degrees);
+}
+
+void Graph::degreeMetric(igraph_vector_t *res, double p){
+    
+    // NE: the number of edge
+    // AD: the average of degree
+    // MD: the maximal of degree
+    // DV: degree variance E(x^2)-E(x)^2
+    // SPL: power law estimate
+    
+    igraph_vector_t degrees;
+    igraph_real_t nne,ad,md,dv, pl;
+    igraph_plfit_result_t plfResult;
+    
+    
+    igraph_vector_init(&degrees, nv);
+    
+    igraph_degree(&graph,&degrees,igraph_vss_all(), IGRAPH_ALL, true);
+    nne=igraph_vector_sum(&degrees);
+    nne/=2;
+    md=igraph_vector_max(&degrees);
+    ad=2*nne/nv;
+    
+    for(long int i=0;i<nv;i++){
+        int d=VECTOR(degrees)[i];
+        dv+=d*d;
+    }
+    dv/=nv;
+    dv-=ad*ad;
+    
+    //determining xmin and alpha
+    igraph_power_law_fit(&degrees, &plfResult, -1, 0);
+    
+    pl=plfResult.alpha;
+    
+    
+    igraph_vector_set(res,0, VECTOR(*res)[0]+nne*p);
+    igraph_vector_set(res,1, VECTOR(*res)[1]+ad*p);
+    igraph_vector_set(res,2,VECTOR(*res)[2]+md*p);
+    igraph_vector_set(res,3, VECTOR(*res)[3]+dv*p);
+    igraph_vector_set(res,4, VECTOR(*res)[4]+pl*p);
+    
+    
+    igraph_vector_destroy(&degrees);
+
 }
 
 void Graph::metric(igraph_vector_t *res,double p){
@@ -578,6 +623,14 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
         lowNodes[pos]=0;
     }
     
+    for(int i=nv;;i--){
+        Node_UN  nu=nodeUNs[i];
+        long int pos=nu.nodeID;
+        
+      
+    }
+  
+    
     discrete_distribution<long int> distribution(lowNodes.begin(),lowNodes.end());
     uniform_real_distribution<double> unDist(0.0,1.0);
     uniform_real_distribution<double> unGenDist(0.0,1.0);
@@ -711,27 +764,7 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
                 
             }
             
-//            if(EIndicator(u,v)==1){
-//                // if edge exist in G
-//                if(ECIndicator(u,v)==1){
-//                    count-=1;
-//                    ECIndicator(u,v)=0;
-//                }else{
-//                    
-//                }
-//                
-//            }else{
-//                
-//                if(ECIndicator(u,v)==0){
-//                    igraph_vector_set(&EC, k++,u);
-//                    igraph_vector_set(&EC, k++,v);
-//                    
-//                    count+=1;
-//                   // igraph_matrix_set(&ECIndicator,u,v,1);
-//                    ECIndicator(u,v)=1;
-//                }
-//                
-//            }
+
 
             
             
@@ -822,8 +855,8 @@ UncertainGraph Graph::generateObfuscation(igraph_real_t sigma, igraph_real_t * e
                 re=unGenDist(sgen);
                 unCount+=1;
             }else{
-                re=truncated_normal_ab_sample(0.0, sqrt((double) sigma_e), 0.0, 1.0, seed);
-                // re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
+              // re=truncated_normal_ab_sample(0.0, sqrt((double) sigma_e), 0.0, 1.0, seed);
+                re=truncated_normal_ab_sample(0.0,  sigma_e, 0.0, 1.0, seed);
             }
             
             long int from=VECTOR(EC)[2*i];

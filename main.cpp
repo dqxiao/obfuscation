@@ -37,11 +37,11 @@ void graphTest(){
     // test baisc function about certain class
     k=100;
     c=2;
-    attempt=1;
+    attempt=5;
     epsilon=0.0001;
     noise=0.01;
     delimiter=' ';
-    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/dblp.txt";
+    string filepath="/Users/dongqingxiao/Documents/uncetainGraphProject/graphs/dataset/dblp.txt";
     
     Graph g=init_from_file(filepath);
     
@@ -49,6 +49,9 @@ void graphTest(){
     g.selfTest(100);
     igraph_real_t eps_res;
     UncertainGraph tpg=g.generateObfuscation(0.01, &eps_res);
+    
+    tpg.graphStastic();
+    
 }
 
 void testObfuscation(){
@@ -550,8 +553,6 @@ void certainObfuscation(string dataset,string repDataset){
     
 }
 
-
-
 void randomPerturbationTest_traffic(){
     
     delimiter='\t';
@@ -653,6 +654,178 @@ void nullEdgeReliablity(){
 }
 
 
+
+void generateDegreeMetrics(string dataset){
+    
+    delimiter='\t';
+    string obfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/obOutput/"+dataset+"/";
+    string dMetricfolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/dMetricOutput/"+dataset+"/";
+    
+    string refFolder="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/";
+    
+    
+    long int nv=0;
+    sampleNum=2000;
+    
+    if(dataset=="hepth"){
+        nv=14318;
+    }
+    if(dataset=="dblp"){
+        nv=824774;
+    }
+    
+    vector<string> datasets;
+    
+    if(dataset=="hepth"){
+        
+        datasets.push_back("rand_ob_c1.100000_k60_sigma0.000977");
+        datasets.push_back("rand_ob_c1.300000_k100_sigma0.250000");
+        datasets.push_back("rand_ob_c1.700000_k200_sigma17.125977");
+        datasets.push_back("rand_ob_c3.000000_k300_sigma1.875977");
+
+
+        datasets.push_back("greedy_ob_c1.100000_k60_sigma0.009766");
+        datasets.push_back("greedy_ob_c1.300000_k100_sigma0.091797");
+        datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
+        datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
+
+        datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
+        datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
+        datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
+        datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+    }
+    
+    
+    if(dataset=="dblp"){
+//        datasets.push_back("GREEDY5-1_dblpc2.000000_k60_ob");
+//        datasets.push_back("GREEDY5-1_dblpc2.000000_k100_ob");
+//        datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob");
+//        
+//        datasets.push_back("rand_dblp_ob_c1.100000_k60");
+//        datasets.push_back("rand_dblp_ob_c1.100000_k100");
+//        datasets.push_back("rand_dblp_ob_c1.300000_k200");
+//        datasets.push_back("rand_dblp_ob_c1.700000_k300");
+//        
+//        datasets.push_back("greedy_dblp_ob_c1.100000_k60searchEE");
+//        datasets.push_back("greedy_dblp_ob_c1.500000_k100searchEE");
+   //     datasets.push_back("greedy_dblp_ob_c1.500000_k200searchEE");
+     //   datasets.push_back("greedy_dblp_ob_c1.500000_k300searchEE");
+    }
+    
+    
+    for(string data: datasets){
+        
+        UncertainGraph uobg=init_uncertain_OB_from_file(obfolder+data+".txt", nv);
+        uobg.degreeMetricRecord(dMetricfolder+data+".txt");
+        
+    }
+    
+    // gen ref data
+    
+    UncertainGraph urefg=init_uncertain_from_file(refFolder+dataset+".txt");
+    
+    urefg.degreeMetricRecord(dMetricfolder+"ref"+".txt");
+    
+    
+    
+}
+
+
+
+void degreMetricComparision(string dataset){
+    
+    string relfoler="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/dMetricOutput/"+dataset+"/";
+    
+    
+    long int nv=0;
+    
+    if(dataset=="hepth"){
+        nv=14318;
+    }
+    if(dataset=="dblp"){
+        nv=824774;
+    }
+    
+    string refdata="ref";
+    
+    
+    vector<string> datasets;
+    
+    if(dataset=="hepth"){
+        
+                datasets.push_back("GREEDY5-1_hepthc2.000000_k60sigma0.001953_ob");
+                datasets.push_back("GREEDY5-1_hepthc2.000000_k100sigma0.031250_ob");
+                datasets.push_back("GREEDY5-1_hepthc3.000000_k200sigma0.062500_ob");
+                datasets.push_back("GREEDY5-1_hepthc3.000000_k300sigma1.000000_ob");
+        
+        
+                datasets.push_back("rand_ob_c1.100000_k60_sigma0.000977");
+                datasets.push_back("rand_ob_c1.300000_k100_sigma0.250000");
+                datasets.push_back("rand_ob_c1.700000_k200_sigma17.125977");
+                datasets.push_back("rand_ob_c3.000000_k300_sigma1.875977");
+        
+        
+                datasets.push_back("greedy_ob_c1.100000_k60_sigma0.009766");
+                datasets.push_back("greedy_ob_c1.300000_k100_sigma0.091797");
+                datasets.push_back("greedy_ob_c2.000000_k200_sigma0.278320");
+                datasets.push_back("greedy_ob_c3.000000_k300_sigma0.419922");
+        
+        
+        
+        
+    }
+    
+    if(dataset=="dblp"){
+        datasets.push_back("GREEDY5-1_dblpc2.000000_k60_ob");
+        datasets.push_back("GREEDY5-1_dblpc2.000000_k100_ob");
+        datasets.push_back("GREEDY5-1_dblpc3.000000_k300_ob");
+        
+        datasets.push_back("rand_dblp_ob_c1.100000_k60");
+        datasets.push_back("rand_dblp_ob_c1.100000_k100");
+        datasets.push_back("rand_dblp_ob_c1.300000_k200");
+        datasets.push_back("rand_dblp_ob_c1.700000_k300");
+        
+        datasets.push_back("greedy_dblp_ob_c1.100000_k60searchEE");
+        datasets.push_back("greedy_dblp_ob_c1.500000_k100searchEE");
+        datasets.push_back("greedy_dblp_ob_c1.500000_k200searchEE");
+        datasets.push_back("greedy_dblp_ob_c1.500000_k300searchEE");
+        
+    }
+    
+    igraph_vector_t ref_d_metrics;
+    igraph_vector_init(&ref_d_metrics,5);
+    
+    init_vector_file(&ref_d_metrics,relfoler+refdata+".txt");
+    vector<string> metrics;
+    
+    metrics.push_back("NE");
+    metrics.push_back("AD");
+    metrics.push_back("MD");
+    metrics.push_back("DV");
+    metrics.push_back("PL");
+    
+    
+    for(int i=0;i<5;i++){
+        cout<<metrics[i]<<endl;
+        
+        for(string dataset: datasets){
+            igraph_vector_t d_metrics;
+            igraph_vector_init(&d_metrics,5);
+            
+            init_vector_file(&d_metrics,relfoler+dataset+".txt");
+            
+            cout<<dataset<<":"<<relative_error_metric(&ref_d_metrics,&d_metrics,i)<<endl;
+            
+            
+            igraph_vector_destroy(&d_metrics);
+        }
+        
+    }
+    
+    
+    
+    
+}
 void testAgaist(){
     
     string refData="/Users/dongqingxiao/Documents/uncetainGraphProject/allDataSet/input/dblp.txt";
@@ -687,7 +860,7 @@ void testAgaist(){
 
 int main(int argc, char *argv[]){
     
-   // string dataset="hepth";
+    //string dataset="hepth";
 //    string repDataset="GREEDY5-1_hepth";
    // w_dataset=hepth;
     
@@ -704,8 +877,12 @@ int main(int argc, char *argv[]){
 //    string dataset="dblp";
 //    reliablityComparision(dataset);
     
-    string dataset="DBLP";
-    greedyPerturbation(dataset);
+    
+  //  string dataset="dblp";
+  // generateDegreeMetrics(dataset);
+   // degreMetricComparision(dataset);
+    
+   graphTest();
   
     
     return 0;

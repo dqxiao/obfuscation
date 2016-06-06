@@ -314,4 +314,13 @@ double standard_vaiance_vector(igraph_vector_t * ruv){
     return sigma;
 }
 
-
+double relative_error_metric(igraph_vector_t * one, igraph_vector_t * second, int i){
+    
+    double result=0;
+    
+    result=std::abs(VECTOR(*one)[i]-VECTOR(*second)[i]);
+    
+    result/=std::abs(VECTOR(*one)[i]);
+    
+    return result;
+}

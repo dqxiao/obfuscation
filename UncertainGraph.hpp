@@ -41,6 +41,8 @@ public:
     void entropyReport(igraph_vector_t *res, igraph_real_t maxDegree);  // used only for uncertain graph, maxDegre=
     double testAgaist(igraph_vector_t * ak);
     void graphStastic(void); // basic graph statistics; linear function
+    
+    void degreeMetricRecord(string file);
     void graphDegreeVairance(double sigma_graph); //
     
     
@@ -66,9 +68,9 @@ public:
     void sigmaUniquess(igraph_vector_t * uv, igraph_vector_t ak, igraph_real_t maxDegree, igraph_real_t sigma);
     UncertainGraph generateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); // used for uncertain graph
 
-    UncertainGraph randomGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);
+    UncertainGraph randomGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); // based on uniqueness val
     
-    UncertainGraph greedyGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);
+    UncertainGraph greedyGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); 
     
     
     

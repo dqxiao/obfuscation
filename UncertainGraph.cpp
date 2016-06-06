@@ -198,10 +198,33 @@ void UncertainGraph::graphStastic(){
     double edgePSum=igraph_vector_sum(&pe);
     cout<<"uncertain statstic"<<endl;
     cout<<"|V|:"<<nv<<endl;
-    cout<<"|E|:"<<ne<<endl;
-    cout<<"|E|/|V|:"<<2*(double)ne/nv<<endl;
+    cout<<"|E|:"<<edgePSum<<endl;
+    cout<<"|E|/|V|:"<<2*(double)edgePSum/nv<<endl;
     cout<<"edge probabiblity (mean):"<<edgePSum/ne<<endl;
     cout<<"exp degree (mean):"<<edgePSum*2/nv<<endl;
+}
+
+
+void UncertainGraph::degreeMetricRecord(string filepath){
+    igraph_vector_t dmetrics;
+    
+    igraph_vector_init(&dmetrics, 5);
+    
+    double p=1.0/sampleNum;
+    for(long int i=0;i<sampleNum;i++){
+        
+        cout<<i<<"th sample graph"<<endl;
+        
+        UncertainGraph sg=sampleGraph();
+        Graph g(sg);
+        
+        g.degreeMetric(&dmetrics, p);
+        
+    }
+    
+    
+    
+    write_vector_file(&dmetrics, filepath);
 }
 
 

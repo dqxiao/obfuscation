@@ -29,6 +29,9 @@ double cal_distance_vector(igraph_vector_t * one, igraph_vector_t * second);
 double cal_relative_error_vector(igraph_vector_t * one, igraph_vector_t * second);
 double cal_mean_error_vector(igraph_vector_t * ref, igraph_vector_t * test);
 
+double relative_error_metric(igraph_vector_t * one, igraph_vector_t * second, int i);
+
+
 
 long int permuateCal(long int number); 
 
@@ -41,5 +44,7 @@ void reverseVector(igraph_vector_t * ruv);
 double featureCombine(double uniq, double robust);
 
 double standard_vaiance_vector(igraph_vector_t * ruv);
+
+
 
 #endif /* DDCal_hpp */
