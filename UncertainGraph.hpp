@@ -70,7 +70,10 @@ public:
 
     UncertainGraph randomGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); // based on uniqueness val
     
-    UncertainGraph greedyGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak); 
+    UncertainGraph greedyGenerateObfuscation(igraph_real_t sigma, igraph_real_t * eps_res, igraph_vector_t * ak);  // based on uniqueness val and utitly-based transform
+    
+
+    UncertainGraph realRandom 
     
     
     
